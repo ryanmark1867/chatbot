@@ -1,0 +1,39 @@
+intents:
+- greet
+- get_columns
+- goodbye
+- affirm
+- deny
+- mood_great
+- mood_unhappy
+- inform
+entities:
+- url
+slots:
+  column_names:
+    type: list
+  csv_url:
+    type: text
+    initial_value: https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/d546eaee765268bf2f487608c537c05e22e4b221/iris.csv
+templates:
+  utter_greet:
+  - text: Hey! How are you?
+  utter_cheer_up:
+  - text: 'Here is something to cheer you up:'
+    image: https://i.imgur.com/nGF1K8f.jpg
+  utter_did_that_help:
+  - text: Did that help you?
+  utter_happy:
+  - text: Great carry on!
+  utter_goodbye:
+  - text: Bye
+  utter_give_columns:
+  - text: Column names are Movie Title, Director, and Year
+actions:
+- utter_give_columns
+- utter_greet
+- utter_cheer_up
+- utter_did_that_help
+- utter_happy
+- utter_goodbye
+- action_csv_info
