@@ -13,13 +13,48 @@
 - no way
 - not really
 
-## intent:inform
-- column
-- column name
-- headers
-- please list the column names
-- header names
-- column names for
+## intent:get_file_columns
+- can i get details for [c:\personal\chatbot_july_2019\datasets\links.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\credits.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\keywords.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\links_small.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\movies_metadata.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\ratings.csv](file_name)
+- can i get details for [c:\personal\chatbot_july_2019\datasets\ratings_small.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\links.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\credits.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\keywords.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\links_small.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\movies_metadata.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\ratings.csv](file_name)
+- details for [c:\personal\chatbot_july_2019\datasets\ratings_small.csv](file_name)
+- details for [https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/d546eaee765268bf2f487608c537c05e22e4b221/iris.csv](file_name)
+- can I get details for [https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/d546eaee765268bf2f487608c537c05e22e4b221/iris.csv](file_name)
+- details\nfor [c:\personal\chatbot_july_2019\datasets\ratings.csv](file_name:c: personal chatbot_july_2019\datasets ratings.csv)
+- details please for [c:\personal\chatbot_july_2019\datasets\ratings.csv](file_name:c: personal chatbot_july_2019\datasets ratings.csv)
+
+
+## intent:get_file_row
+- row [4](row_number)
+- row [0](row_number)
+- row [1](row_number)
+- row [2](row_number)
+- row [3](row_number)
+- row [9](row_number)
+- row [5](row_number)
+- row [6](row_number)
+- row [7](row_number)
+- row [8](row_number)
+- row [4](row_number) please
+- row [0](row_number) please
+- row [1](row_number) please
+- row [2](row_number) please
+- row [3](row_number) please
+- row [9](row_number) please
+- row [5](row_number) please
+- row [6](row_number) please
+- row [7](row_number) please
+- row [8](row_number) please
 
 ## intent:goodbye
 - bye
@@ -34,6 +69,7 @@
 - good morning
 - good evening
 - hey there
+- good day
 
 ## intent:mood_great
 - perfect
