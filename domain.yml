@@ -1,20 +1,20 @@
 intents:
 - greet
-- get_columns
 - goodbye
 - affirm
 - deny
 - mood_great
 - mood_unhappy
-- inform
+- get_file_columns
+- get_file_row
 entities:
-- url
+- file_name
+- row_number
 slots:
-  column_names:
-    type: list
-  csv_url:
+  file_name:
     type: text
-    initial_value: https://gist.githubusercontent.com/curran/a08a1080b88344b0c8a7/raw/d546eaee765268bf2f487608c537c05e22e4b221/iris.csv
+  row_number:
+    type: text
 templates:
   utter_greet:
   - text: Hey! How are you?
@@ -27,13 +27,17 @@ templates:
   - text: Great carry on!
   utter_goodbye:
   - text: Bye
-  utter_give_columns:
-  - text: Column names are Movie Title, Director, and Year
+  utter_get_file_columns:
+  - text: what file are you interested in?
+  utter_get_file_row:
+  - text: what row number do you want to see?
 actions:
-- utter_give_columns
 - utter_greet
 - utter_cheer_up
 - utter_did_that_help
 - utter_happy
 - utter_goodbye
-- action_csv_info
+- utter_get_file_columns
+- utter_get_file_row
+- action_file_columns
+- action_file_row
