@@ -34,6 +34,7 @@
 - details please for [c:\personal\chatbot_july_2019\datasets\ratings.csv](file_name:c: personal chatbot_july_2019\datasets ratings.csv)
 - details\nfor [https://raw.githubusercontent.com/ryanmark1867/manning/master/CSV_XLS/Streetcar%20Jan%202014.csv](file_name)
 - details\nfor [https://raw.githubusercontent.com/ryanmark1867/manning/master/CSV_XLS/Streetcar%20Jan%202014.csv](file_name)
+- details\nfor [https://raw.githubusercontent.com/ryanmark1867/manning/master/CSV_XLS/Streetcar%20Jan%202014.csv](file_name)
 
 ## intent:get_file_row
 - row [4](row_number)
@@ -62,6 +63,30 @@
 - [6](row_number)
 - [7](row_number)
 - [8](row_number)
+
+## intent:get_first_n_rows
+- first [3](row_range) rows please
+
+## intent:get_last_n_rows
+- show me that last [2](row_range) rows
+- show me that last [3](row_range) rows
+- show me that last [4](row_range) rows
+- show me that last [5](row_range) rows
+- show me that last [6](row_range) rows
+- show me that last [7](row_range) rows
+- show me that last [8](row_range) rows
+- show me that last [9](row_range) rows
+- show me that last [10](row_range) rows
+- please show me that last [2](row_range) rows
+- please show me that last [3](row_range) rows
+- please show me that last [4](row_range) rows
+- please show me that last [5](row_range) rows
+- please show me that last [6](row_range) rows
+- please show me that last [7](row_range) rows
+- please show me that last [8](row_range) rows
+- please show me that last [9](row_range) rows
+- please show me that last [10](row_range) rows
+- show me the last [4](row_range) rows
 
 ## intent:goodbye
 - bye
