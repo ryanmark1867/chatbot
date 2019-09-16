@@ -56,12 +56,16 @@ class ActionFileRow(Action):
       df=pd.read_csv(csv_url)
       # get raw values from dataframe
       result = df.values
-      dispatcher.utter_message("inside action file row and row number is ")
-      dispatcher.utter_message(str(len(result[csv_row])))
-      #dispatcher.utter_message(result[csv_row][0])
+      header_output = "contents for row "+str(csv_row)+" are:"
+      dispatcher.utter_message(header_output)
+      #dispatcher.utter_message(str(len(result[csv_row])))
       #
-      # for the selected row, iterate and output every value
-      for i in range(len(result[csv_row])):
-         dispatcher.utter_message(str(result[csv_row][i]))
+      # convert all elements of the row to strings (dispather.utter_message will only output strings)
+      str_array = [str(i) for i in result[csv_row]]
+      # concatenate all the elements of the string cast arrage
+      one_line_output = ", ".join(str_array)
+      dispatcher.utter_message(one_line_output)
+      #for i in range(len(result[csv_row])):
+      #   dispatcher.utter_message(str(result[csv_row][i]))
       return []
    
