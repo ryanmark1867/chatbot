@@ -36,11 +36,11 @@ class ActionFileColumns(Action):
    def name(self) -> Text:
       return "action_file_columns"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      dispatcher.utter_message("Here is the list of column names 1")
       csv_url = tracker.get_slot('file_name')
       df=pd.read_csv(csv_url)
       result = list(df)
-      dispatcher.utter_message("Here is the list of column names 2")
+      dispatcher.utter_message("Here is the list of column names for file:")
+      dispatcher.utter_message(csv_url)
       for i in range(len(result)):
           dispatcher.utter_message(result[i]+" ")
       return []
@@ -50,17 +50,18 @@ class ActionFileColumns(Action):
 class ActionFileRow(Action):
    def name(self) -> Text:
       return "action_file_row"
-
-   def run(self,
-           dispatcher: CollectingDispatcher,
-           tracker: Tracker,
-           domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       csv_url = tracker.get_slot('file_name')
-      csv_row = tracker.get_slot('row_number')
+      csv_row = int(tracker.get_slot('row_number'))
       df=pd.read_csv(csv_url)
-      result = list(df)
-      dispatcher.utter_message("Here is column ",csv_row)
-      dispathcer.utter_message(df.iloc[[csv_row]])
+      # get raw values from dataframe
+      result = df.values
+      dispatcher.utter_message("inside action file row and row number is ")
+      dispatcher.utter_message(str(len(result[csv_row])))
+      #dispatcher.utter_message(result[csv_row][0])
+      #
+      # for the selected row, iterate and output every value
+      for i in range(len(result[csv_row])):
+         dispatcher.utter_message(str(result[csv_row][i]))
       return []
    
