@@ -7,13 +7,18 @@ intents:
 - mood_unhappy
 - get_file_columns
 - get_file_row
+- get_last_n_rows
+- get_first_n_rows
 entities:
 - file_name
 - row_number
+- row_range
 slots:
   file_name:
     type: text
   row_number:
+    type: text
+  row_range:
     type: text
 templates:
   utter_greet:
@@ -31,6 +36,8 @@ templates:
   - text: what file are you interested in?
   utter_get_file_row:
   - text: what row number do you want to see?
+  utter_what_next:
+  - text: what would you like to do next?
 actions:
 - utter_greet
 - utter_cheer_up
@@ -39,5 +46,8 @@ actions:
 - utter_goodbye
 - utter_get_file_columns
 - utter_get_file_row
+- utter_what_next
 - action_file_columns
 - action_file_row
+- action_last_n_rows
+- action_first_n_rows

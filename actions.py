@@ -58,7 +58,6 @@ class ActionFileRow(Action):
       result = df.values
       header_output = "contents for row "+str(csv_row)+" are:"
       dispatcher.utter_message(header_output)
-      #dispatcher.utter_message(str(len(result[csv_row])))
       #
       # convert all elements of the row to strings (dispather.utter_message will only output strings)
       str_array = [str(i) for i in result[csv_row]]
@@ -68,4 +67,42 @@ class ActionFileRow(Action):
       #for i in range(len(result[csv_row])):
       #   dispatcher.utter_message(str(result[csv_row][i]))
       return []
+
+class ActionFileRow(Action):
+   # get the min, max, average for continuous columns
+   def name(self) -> Text:
+      return "action_first_n_rows"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      csv_url = tracker.get_slot('file_name')
+      csv_row_range = int(tracker.get_slot('row_range'))
+      df=pd.read_csv(csv_url)
+      # get raw values from dataframe
+      result = df.values
+      header_output = "last "+str(csv_row_range)+" rows are:"
+      dispatcher.utter_message(header_output)
+      for j in range (csv_row_range):
+         str_array = [str(i) for i in result[j]]
+         one_line_output = ", ".join(str_array)
+         dispatcher.utter_message(one_line_output)
+      return []
+
    
+class ActionFileRow(Action):
+   # get the min, max, average for continuous columns
+   def name(self) -> Text:
+      return "action_last_n_rows"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      csv_url = tracker.get_slot('file_name')
+      csv_row_range = int(tracker.get_slot('row_range'))
+      df=pd.read_csv(csv_url)
+      number_rows = len(df.index)
+      # get raw values from dataframe
+      result = df.values
+      header_output = "last "+str(csv_row_range)+" rows are:"
+      dispatcher.utter_message(header_output)
+      # iterate through the last n rows
+      for j in range (number_rows-csv_row_range,number_rows):
+         str_array = [str(i) for i in result[j]]
+         one_line_output = ", ".join(str_array)
+         dispatcher.utter_message(one_line_output)
+      return []
