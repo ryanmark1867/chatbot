@@ -9,10 +9,13 @@ intents:
 - get_file_row
 - get_last_n_rows
 - get_first_n_rows
+- rank_col_by_other_col
 entities:
 - file_name
 - row_number
 - row_range
+- ranked_col
+- ranking_col
 slots:
   file_name:
     type: text
@@ -20,6 +23,30 @@ slots:
     type: text
   row_range:
     type: text
+  ranked_col:
+    type: text
+  ranking_col:
+    type: text
+  ascending_descending:
+    type: categorical
+    values:
+    - ascending
+    - descending
+  top_bottom:
+    type: categorical
+    values:
+    - top
+    - bottom
+  condition_col:
+    type: list
+  condition_val:
+    type: list
+  condition_operator:
+    type: categorical
+    values:
+    - equals
+    - less than
+    - greater than
 templates:
   utter_greet:
   - text: Hey! How are you?
@@ -51,3 +78,5 @@ actions:
 - action_file_row
 - action_last_n_rows
 - action_first_n_rows
+- action_rank_col_by_other_col
+
