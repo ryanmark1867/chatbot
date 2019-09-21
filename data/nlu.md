@@ -88,6 +88,10 @@
 - please show me that last [10](row_range) rows
 - show me the last [4](row_range) rows
 
+## intent:rank_col_by_other_col
+- show me the [top](top_bottom) [movies](ranked_col) from [2004](condition_value)
+- show me the [top](top_bottom) [French](condition_value) [movies](ranked_col) from [2004](condition_value)
+
 ## intent:goodbye
 - bye
 - goodbye
@@ -128,3 +132,6 @@
 
 ## synonym:c: personal chatbot_july_2019\datasets ratings.csv
 - c:\personal\chatbot_july_2019\datasets\ratings.csv
+
+## synonym: movie
+- original_title
