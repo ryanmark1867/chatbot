@@ -114,3 +114,71 @@
 * get_first_n_rows{"row_range":"3"}
     - slot{"row_range":"3"}
     - action_first_n_rows
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_year{"top_bottom":"top","ranked_col":"movies","row_number":"2004"}
+    - slot{"ranked_col":"movies"}
+    - slot{"row_number":"2004"}
+    - slot{"top_bottom":"top"}
+    - action_condition_by_year
+
+## New Story
+
+* greet
+    - utter_greet
+    - utter_what_next
+* condition_by_year{"top_bottom":"top","ranked_col":"movies","year":"2004"}
+    - slot{"ranked_col":"movies"}
+    - slot{"top_bottom":"top"}
+    - slot{"year":"2004"}
+    - action_condition_by_year
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_year{"top_bottom":"top","ranked_col":"movies","year":"1948"}
+    - slot{"ranked_col":"movies"}
+    - slot{"top_bottom":"top"}
+    - slot{"year":"1948"}
+    - action_condition_by_year
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_year{"top_bottom":"top","ranked_col":"movies","year":"1948"}
+    - slot{"ranked_col":"movies"}
+    - slot{"top_bottom":"top"}
+    - slot{"year":"1948"}
+    - action_condition_by_year
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_movie{"ranked_col":"plot","movie":"Taxi Driver"}
+    - slot{"movie":"Taxi Driver"}
+    - slot{"ranked_col":"plot"}
+    - action_condition_by_movie
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_movie{"ranked_col":"plot","movie":"Toy Story"}
+    - slot{"movie":"Toy Story"}
+    - slot{"ranked_col":"plot"}
+    - action_condition_by_movie
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_movie{"ranked_col":"plot","movie":"The Exorcist"}
+    - slot{"movie":"The Exorcist"}
+    - slot{"ranked_col":"plot"}
+    - action_condition_by_movie
