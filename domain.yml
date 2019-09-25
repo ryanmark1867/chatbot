@@ -10,43 +10,91 @@ intents:
 - get_last_n_rows
 - get_first_n_rows
 - rank_col_by_other_col
+- condition_by_year
+- condition_by_movie
+- condition_by_language
 entities:
 - file_name
 - row_number
 - row_range
 - ranked_col
-- ranking_col
+- top_bottom
+- condition_value
+- movie
+- year
+- revenue
+- plot
+- language
+- condition_value, keyword
+- condition_value, movie
+- condition_value,original_language
 slots:
-  file_name:
-    type: text
-  row_number:
-    type: text
-  row_range:
-    type: text
-  ranked_col:
-    type: text
-  ranking_col:
-    type: text
   ascending_descending:
     type: categorical
+    initial_value: ascending
     values:
     - ascending
     - descending
-  top_bottom:
-    type: categorical
-    values:
-    - top
-    - bottom
   condition_col:
-    type: list
-  condition_val:
     type: list
   condition_operator:
     type: categorical
+    initial_value: equals
     values:
     - equals
     - less than
     - greater than
+  condition_val:
+    type: list
+  file_name:
+    type: text
+  keyword:
+    type: text
+  movie:
+    type: text
+  original_language:
+    type: text
+  plot:
+    type: text
+  ranked_col:
+    type: text
+  revenue:
+    type: text
+  row_number:
+    type: text
+    initial_value: 5
+  row_range:
+    type: text
+  sort_col:
+    type: text
+    initial_value: popularity
+  top_bottom:
+    type: categorical
+    initial_value: top
+    values:
+    - top
+    - bottom
+  language:
+    type: categorical
+    initial_value: English
+    values:
+    - French
+    - German
+    - English
+    - Italian
+    - Spanish
+    - Dutch
+    - Arabic
+    - Chinese
+    - Russian
+    - Japanese
+    - Korean
+    - Portuguese
+    - Swedish
+    - Czech
+    - Romanian
+  year:
+    type: text
 templates:
   utter_greet:
   - text: Hey! How are you?
@@ -79,4 +127,5 @@ actions:
 - action_last_n_rows
 - action_first_n_rows
 - action_rank_col_by_other_col
-
+- action_condition_by_year
+- action_condition_by_movie

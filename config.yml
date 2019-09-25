@@ -14,7 +14,7 @@ pipeline:
     min_ngram: 1
     max_ngram: 4
   - name: "EmbeddingIntentClassifier"
-  - name: "ner_synonyms"
+  - name: "EntitySynonymMapper"
 
 
 # Configuration for Rasa Core.
