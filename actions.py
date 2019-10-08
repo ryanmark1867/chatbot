@@ -42,6 +42,16 @@ path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/m
 path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
 path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
 
+# define columns in each file that are JSON formatted and need to be ast.literal_eval processed
+json_dict = {}
+json_dict['links'] = []
+json_dict['movies'] = ['genres','production_companies','production_countries','spoken_languages',]
+json_dict['ratings'] = []
+# credits file currently corrputed - comment out literal_eval columns for it until corruption gets fixed
+# json_dict['credits'] = ['cast','crew']
+json_dict['credits'] = []
+json_dict['keywords'] = ['keywords']
+
 # define schema for dataset
 movie_schema = {"ratings_small":["userId", "movieId","rating","timestamp"],
                 "credit_small":["cast","crew","id"],
@@ -62,10 +72,23 @@ slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
 
 # preload dataframes with datasets
+# switch to serialize dataframes
+save_files = False
+# switch to load from serialized dataframes
+saved_files = True
 df_dict = {}
 for file in path_dict:
    print("about to create df for ",file)
-   df_dict[file] = pd.read_csv(path_dict[file])
+   if saved_files:
+      df_dict[file] = pd.read_pickle(str(file))
+   else:
+      df_dict[file] = pd.read_csv(path_dict[file])
+   for cols in json_dict[file]:
+      print("about to ast.literal_eval ",cols)
+      # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
+      df_dict[file][cols] = df_dict[file][cols].apply(lambda x: ast.literal_eval(x))
+   if save_files:
+      df_dict[file].to_pickle(str(file))
 
 
 
@@ -270,8 +293,8 @@ class action_condition_by_keyword(Action):
       df_movies=df_dict['movies']
       df_keywords = df_dict['keywords']
       ranked_col = slot_map[ranked_col]
-      # interpret string of list from CSV as a Python list
-      df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
+      # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
+      # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
       ## TODO this is gross - need a better way to get the list of ids
       output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
       #str3 = "here output " + str(len(output))
