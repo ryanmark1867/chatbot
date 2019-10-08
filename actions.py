@@ -70,6 +70,8 @@ slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
 slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
+slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
+
 
 # preload dataframes with datasets
 # switch to serialize dataframes
@@ -193,12 +195,15 @@ class action_condition_by_year(Action):
       ranked_col = tracker.get_slot("ranked_col")
       year = tracker.get_slot("year")
       top_bottom = tracker.get_slot("top_bottom")
+      genre = tracker.get_slot("genre")
       if top_bottom == 'top':
          ascend_direction = False
       else:
          ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
       sort_col = tracker.get_slot("sort_col")
+      if genre == None:
+         dispatcher.utter_message("genre is None")
       str1 = "COMMENT: getting "+ str(ranked_col) + " for year "+str(year)
       dispatcher.utter_message(str1)
       df=df_dict['movies']
@@ -282,11 +287,8 @@ class action_condition_by_keyword(Action):
       language = tracker.get_slot("language")
       keyword = tracker.get_slot("keyword")
       top_bottom = tracker.get_slot("top_bottom")
-      if top_bottom == 'top':
-         ascend_direction = False
-      else:
-         ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
+      genre = tracker.get_slot("genre")
       sort_col = tracker.get_slot("sort_col")
       str1 = "COMMENT: getting "+ str(ranked_col) + " for keyword "+str(keyword)
       dispatcher.utter_message(str1)
@@ -301,6 +303,7 @@ class action_condition_by_keyword(Action):
       #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
       #str5 = "len output "+ str(len(output))
       # result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
+      result_big = df_movies.loc[df_movies['id'].isin(output)]
       result = df_movies[ranked_col][df_movies['id'].isin(output)]
       limiter = int(csv_row)
       str4 = "result len " + str(len(result))
@@ -312,6 +315,17 @@ class action_condition_by_keyword(Action):
          if i >= limiter:
             break
       #dispatcher.utter_message(str(str3))
+      dispatcher.utter_message("COMMENT: genre sublist")
+      if genre != None:
+         genre = slot_map[genre]
+         str5 = "genre is "+genre
+         dispatcher.utter_message(str(str5))
+         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre),axis=1)))
+         for item in genre_output:
+            dispatcher.utter_message(str(item))
+            i = i+1
+            if i >= limiter:
+               break
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
