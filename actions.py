@@ -265,21 +265,30 @@ class action_condition_by_keyword(Action):
          ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
       sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: getting "+ str(ranked_col) + " for keyword"+str(keyword)
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for keyword "+str(keyword)
       dispatcher.utter_message(str1)
       df_movies=df_dict['movies']
       df_keywords = df_dict['keywords']
       ranked_col = slot_map[ranked_col]
       # interpret string of list from CSV as a Python list
       df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
-      # str2 = "COMMENT: sampler id "+str(df_keywords['id'][0]) + "sampler keywords " + str(len(df_keywords['keywords'][0]))
       ## TODO this is gross - need a better way to get the list of ids
       output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
       #str3 = "here output " + str(len(output))
-      str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
-      
-      
-      dispatcher.utter_message(str(str3))
+      #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
+      #str5 = "len output "+ str(len(output))
+      # result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
+      result = df_movies[ranked_col][df_movies['id'].isin(output)]
+      limiter = int(csv_row)
+      str4 = "result len " + str(len(result))
+      #dispatcher.utter_message(str(str4))
+      i = 0
+      for item in result:
+         dispatcher.utter_message(str(item))
+         i = i+1
+         if i >= limiter:
+            break
+      #dispatcher.utter_message(str(str3))
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
