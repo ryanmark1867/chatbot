@@ -31,13 +31,18 @@ from rasa_sdk.events import SlotSet
 from typing import Any, Text, Dict, List
 from rasa_sdk.executor import CollectingDispatcher
 import pandas as pd
+import ast
 
-links_path = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/links_small.csv'
-movies_path = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/movies_metadata_small.csv'
-ratings_path = 'https://github.com/ryanmark1867/chatbot/blob/master/datasets/ratings_small.csv'
-credits_path = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
-keywords_path = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
+# define paths for movie dataset files
 
+path_dict = {}
+path_dict['links'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/links_small.csv'
+path_dict['movies'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/movies_metadata_small.csv'
+path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/ratings_small.csv'
+path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
+path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
+
+# define schema for dataset
 movie_schema = {"ratings_small":["userId", "movieId","rating","timestamp"],
                 "credit_small":["cast","crew","id"],
                 "movies_metadata_small":["adult","belongs_to_collection","budget","genres","homepage","id","imdb_id","original_language","original_title",
@@ -46,12 +51,22 @@ movie_schema = {"ratings_small":["userId", "movieId","rating","timestamp"],
                 "keywords_small":["id","keywords"],
                 "links_small":["movieId","imdbId","tmdbId"]}
 
+# define synonyms (TODO see how to move at least a subset of these to Rasa level so they don't have to be maintained at Python layer)
 slot_map = dict.fromkeys(['movies','movie name','title'],'original_title')
 slot_map.update(dict.fromkeys(['plot','plot summary','plot statement'],'overview'))
 slot_map.update(dict.fromkeys(['year','release date'],'release_date'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
 slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
+slot_map.update(dict.fromkeys(['budget'],'budget'))
+slot_map.update(dict.fromkeys(['revenue'],'revenue'))
+
+# preload dataframes with datasets
+df_dict = {}
+for file in path_dict:
+   print("about to create df for ",file)
+   df_dict[file] = pd.read_csv(path_dict[file])
+
 
 
 
@@ -161,9 +176,9 @@ class action_condition_by_year(Action):
          ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
       sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: "+ str(movies_path)
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for year "+str(year)
       dispatcher.utter_message(str1)
-      df=pd.read_csv(movies_path)
+      df=df_dict['movies']
       ranked_col = slot_map[ranked_col]
       result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
       limiter = int(csv_row)
@@ -179,14 +194,14 @@ class action_condition_by_year(Action):
       return []
 
 class action_condition_by_movie(Action):
-   """return the values scoped by year"""
+   """return the values scoped by movie"""
    def name(self) -> Text:
       return "action_condition_by_movie"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       slot_dict = tracker.current_slot_values()
       #for slot_entry in slot_dict:
-      #   dispatcher.utter_message(str(slot_entry))
-      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
+      #  dispatcher.utter_message(str(slot_entry))
+      #  dispatcher.utter_message(str(slot_dict[slot_entry]))
       ranked_col = tracker.get_slot("ranked_col")
       movie = tracker.get_slot("movie")
       top_bottom = tracker.get_slot("top_bottom")
@@ -196,15 +211,81 @@ class action_condition_by_movie(Action):
          ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
       sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: "+ str(movies_path)
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for "+str(movie)
       dispatcher.utter_message(str1)
-      df=pd.read_csv(movies_path)
+      df=df_dict['movies']
       ranked_col = slot_map[ranked_col]
       result = df[df['original_title'] == movie][ranked_col]
       dispatcher.utter_message(str(result))
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
+
+# syntax to determine if a value exists in a an array of dictionaries:
+# keyword_list = [{'id': 1009, 'name': 'baby'}, {'id': 1599, 'name': 'midlife crisis'}, {'id': 2246, 'name': 'confidence'}, {'id': 4995, 'name': 'aging'}, {'id': 5600, 'name': 'daughter'}, {'id': 10707, 'name': 'mother daughter relationship'}, {'id': 13149, 'name': 'pregnancy'}, {'id': 33358, 'name': 'contraception'}, {'id': 170521, 'name': 'gynecologist'}]
+#  y = any(d.get('name',None)=='midlife crisis' for d in keyword_list)
    
+
+def check_keyword_dict(dispatcher,id,keyword_list, keyword):
+   id_there = False
+   # TODO: there should be a more pythonic way to do this (check if a value occurs anywhere in a list of dictionaries
+   # that is more efficient that this loop 
+   for dict in keyword_list:
+      if keyword in dict.values():
+         id_there = True
+   if id_there:
+      return(id)
+   else:
+      return[]
+         
+      
+   
+   '''if any(d.get('name',None)==keyword for d in keyword_list):
+      return(id)
+   else:
+      return('None')'''
+      
+
+
+class action_condition_by_keyword(Action):
+   """return the values scoped by keyword"""
+   def name(self) -> Text:
+      return "action_condition_by_keyword"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      slot_dict = tracker.current_slot_values()
+      #for slot_entry in slot_dict:
+      #   dispatcher.utter_message(str(slot_entry))
+      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
+      ranked_col = tracker.get_slot("ranked_col")
+      language = tracker.get_slot("language")
+      keyword = tracker.get_slot("keyword")
+      top_bottom = tracker.get_slot("top_bottom")
+      if top_bottom == 'top':
+         ascend_direction = False
+      else:
+         ascend_direction = True
+      csv_row = int(tracker.get_slot('row_number'))
+      sort_col = tracker.get_slot("sort_col")
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for keyword"+str(keyword)
+      dispatcher.utter_message(str1)
+      df_movies=df_dict['movies']
+      df_keywords = df_dict['keywords']
+      ranked_col = slot_map[ranked_col]
+      # interpret string of list from CSV as a Python list
+      df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
+      # str2 = "COMMENT: sampler id "+str(df_keywords['id'][0]) + "sampler keywords " + str(len(df_keywords['keywords'][0]))
+      ## TODO this is gross - need a better way to get the list of ids
+      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
+      #str3 = "here output " + str(len(output))
+      str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
+      
+      
+      dispatcher.utter_message(str(str3))
+      dispatcher.utter_message("COMMENT: end of transmission")
+      return []
+
+
+
+
 class action_condition_by_language(Action):
    """return the values scoped by year"""
    def name(self) -> Text:
@@ -223,9 +304,9 @@ class action_condition_by_language(Action):
          ascend_direction = True
       csv_row = int(tracker.get_slot('row_number'))
       sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: "+ str(movies_path)
+      str1 = "COMMENT: "+ str(path_dict['movies'])
       dispatcher.utter_message(str1)
-      df=pd.read_csv(movies_path)
+      df=df_dict['movies']
       ranked_col = slot_map[ranked_col]
       language = slot_map[language]
       result = df[df['original_language'] == language][ranked_col]
