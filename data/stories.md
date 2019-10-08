@@ -1,10 +1,3 @@
-## superlative ranking
-* greet
-  - utter_greet
-  - utter_what_next
-* rank_col_by_other_col  
-  - action_rank_col_by_other_col
-  - utter_what_next
 
 ## file path1
 * greet
@@ -182,3 +175,12 @@
     - slot{"movie":"The Exorcist"}
     - slot{"ranked_col":"plot"}
     - action_condition_by_movie
+
+## New Story
+
+* greet
+    - utter_what_next
+* condition_by_keyword{"ranked_col":"movies","keyword":"midlife crisis"}
+    - slot{"ranked_col":"movies"}
+    - slot{"keyword":"midlife crisis"}
+    - action_condition_by_keyword
