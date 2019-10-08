@@ -1,0 +1,1 @@
+pickled dataframes from small versions of movie db files. Use these to conveniently do work offline and speed up cycles of Python updates.
