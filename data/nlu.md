@@ -5,10 +5,13 @@
 - that sounds good
 - correct
 
+## intent:condition_by_cast
+- list [movies](ranked_col) with [Marilyn Monroe](castmember)
+- list [movies](ranked_col) with [Jack Lemmon](castmember)
+- list [movies](ranked_col) with [Marilyn Monroe](castmember) and [Jack Lemmon](castmember)
+- [movies](ranked_col) with [Marilyn Monroe](castmember) and [Jack Lemmon](castmember)
+
 ## intent:condition_by_keyword
-- list [funny](genre) [vampire](keyword) [movies](ranked_col)
-- [funny](genre) [movies](ranked_col) about [vampires](keyword)
-- [funny](genre) [vampire](keyword) [movies](ranked_col)
 - list [movies](ranked_col) about [midlife crisis](keyword)
 - list [movies](ranked_col) about [vampires](keyword)
 - list [midlife crisis](keyword) [movies](ranked_col)
@@ -196,3 +199,5 @@
 - extremely sad
 - so sad
 
+## synonym:c: personal chatbot_july_2019\datasets ratings.csv
+- c:\personal\chatbot_july_2019\datasets\ratings.csv

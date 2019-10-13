@@ -13,6 +13,14 @@
   - action_first_n_rows
   - utter_what_next
 
+## New Story
+* greet
+    - utter_what_next
+* condition_by_cast{"ranked_col":"movies","castmember":"Jack Lemmon"}
+    - slot{"ranked_col":"movies"}
+    - slot{"castmember":"Jack Lemmon"}
+    - action_condition_by_cast
+
 ## say goodbye
 * goodbye
   - utter_goodbye
@@ -184,3 +192,5 @@
     - slot{"ranked_col":"movies"}
     - slot{"keyword":"midlife crisis"}
     - action_condition_by_keyword
+	
+	
