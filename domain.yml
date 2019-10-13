@@ -13,6 +13,7 @@ intents:
 - condition_by_movie
 - condition_by_language
 - condition_by_keyword
+- condition_by_cast
 entities:
 - file_name
 - row_number
@@ -27,6 +28,7 @@ entities:
 - language
 - keyword
 - genre
+- castmember
 slots:
   ascending_descending:
     type: categorical
@@ -36,6 +38,8 @@ slots:
     - descending
   budget:
     type: text
+  castmember:
+    type: list
   condition_col:
     type: list
   condition_operator:
@@ -49,10 +53,10 @@ slots:
     type: list
   file_name:
     type: text
+  genre:
+    type: text
   keyword:
     type: text
-  genre:
-    type: text    
   language:
     type: categorical
     initial_value: English
@@ -132,3 +136,4 @@ actions:
 - action_condition_by_year
 - action_condition_by_movie
 - action_condition_by_keyword
+- action_condition_by_cast
