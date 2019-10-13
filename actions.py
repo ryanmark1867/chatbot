@@ -329,7 +329,64 @@ class action_condition_by_keyword(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-
+class action_condition_by_cast(Action):
+   """return the values scoped by cast"""
+   def name(self) -> Text:
+      return "action_condition_by_cast"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      slot_dict = tracker.current_slot_values()
+      #for slot_entry in slot_dict:
+      #   dispatcher.utter_message(str(slot_entry))
+      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
+      ranked_col = tracker.get_slot("ranked_col")
+      language = tracker.get_slot("language")
+      keyword = tracker.get_slot("keyword")
+      castmember = tracker.get_slot("castmember")
+      top_bottom = tracker.get_slot("top_bottom")
+      csv_row = int(tracker.get_slot('row_number'))
+      genre = tracker.get_slot("genre")
+      sort_col = tracker.get_slot("sort_col")
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+str(castmember[0])
+      dispatcher.utter_message(str1)
+      '''
+      
+      df_movies=df_dict['movies']
+      df_keywords = df_dict['keywords']
+      ranked_col = slot_map[ranked_col]
+      # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
+      # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
+      ## TODO this is gross - need a better way to get the list of ids
+      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
+      #str3 = "here output " + str(len(output))
+      #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
+      #str5 = "len output "+ str(len(output))
+      # result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
+      result_big = df_movies.loc[df_movies['id'].isin(output)]
+      result = df_movies[ranked_col][df_movies['id'].isin(output)]
+      limiter = int(csv_row)
+      str4 = "result len " + str(len(result))
+      #dispatcher.utter_message(str(str4))
+      i = 0
+      for item in result:
+         dispatcher.utter_message(str(item))
+         i = i+1
+         if i >= limiter:
+            break
+      #dispatcher.utter_message(str(str3))
+      dispatcher.utter_message("COMMENT: genre sublist")
+      if genre != None:
+         genre = slot_map[genre]
+         str5 = "genre is "+genre
+         dispatcher.utter_message(str(str5))
+         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre),axis=1)))
+         for item in genre_output:
+            dispatcher.utter_message(str(item))
+            i = i+1
+            if i >= limiter:
+               break
+      dispatcher.utter_message("COMMENT: end of transmission")
+      '''
+      return []
 
 
 class action_condition_by_language(Action):
