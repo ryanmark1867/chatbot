@@ -32,6 +32,19 @@ from typing import Any, Text, Dict, List
 from rasa_sdk.executor import CollectingDispatcher
 import pandas as pd
 import ast
+import json
+import logging
+# TODO figure out that even after setting logging level to debug, debug logging doesn't appear in the output
+# for now, just keep warning messages for basic logging
+logging.basicConfig(level=logging.DEBUG)
+logging.warning("logging check")
+
+def json_check(string, placeholder):
+   try:
+      testarray = ast.literal_eval(string)
+   except ValueError as e:
+      return placeholder
+   return string
 
 # define paths for movie dataset files
 
@@ -42,14 +55,17 @@ path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/m
 path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
 path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
 
+# placeholders used to clean up files with missing JSON values so that they can have literal_eval processing done on them
+crew_placeholder = str([{'credit_id': '52fe4ab0c3a368484e161d3d', 'department': 'Directing', 'gender': 0, 'id': 1080311, 'job': 'Director', 'name': 'Sandip Ray', 'profile_path': None}])
+cast_placeholder = str([{'cast_id': 0, 'character': '', 'credit_id': '53be47fb0e0a26158f003788', 'gender': 2, 'id': 1894, 'name': 'Scott Caan', 'order': 1, 'profile_path': '/kvUKf9HCaqUtgj7XuKZOvN66MOT.jpg'}, {'cast_id': 1, 'character': '', 'credit_id': '53be48030e0a2615760039f8', 'gender': 0, 'id': 1339926, 'name': 'Lee Nashold', 'order': 2, 'profile_path': None}, {'cast_id': 2, 'character': '', 'credit_id': '53be480a0e0a26158f00378a', 'gender': 2, 'id': 24362, 'name': 'Kevin Michael Richardson', 'order': 3, 'profile_path': '/9dMOW2CFRrlDkNzeXVGMJfASupM.jpg'}, {'cast_id': 3, 'character': '', 'credit_id': '53be48110e0a2615820038b6', 'gender': 2, 'id': 3085, 'name': 'James Caan', 'order': 4, 'profile_path': '/g4bxNXWft1jLZX8gKk4G6ypkTUf.jpg'}, {'cast_id': 4, 'character': '', 'credit_id': '53be48180e0a26157c003802', 'gender': 0, 'id': 53646, 'name': 'Missy Crider', 'order': 5, 'profile_path': '/xkFq4Ye3yz6R5EaBBLb6bY5IDjs.jpg'}, {'cast_id': 5, 'character': '', 'credit_id': '53be481f0e0a2615820038b9', 'gender': 2, 'id': 827, 'name': 'Elliott Gould', 'order': 6, 'profile_path': '/bo5jSwWyFRsKVAkELT9n7AKQqMk.jpg'}, {'cast_id': 6, 'character': '', 'credit_id': '53be48260e0a26157c003804', 'gender': 2, 'id': 62032, 'name': 'Duane Davis', 'order': 7, 'profile_path': '/t9tcFEEbffaD64VZdsc0qwnPnr9.jpg'}])
+
 # define columns in each file that are JSON formatted and need to be ast.literal_eval processed
 json_dict = {}
 json_dict['links'] = []
 json_dict['movies'] = ['genres','production_companies','production_countries','spoken_languages',]
 json_dict['ratings'] = []
-# credits file currently corrputed - comment out literal_eval columns for it until corruption gets fixed
-# json_dict['credits'] = ['cast','crew']
-json_dict['credits'] = []
+json_dict['credits'] = ['cast','crew']
+# json_dict['credits'] = []
 json_dict['keywords'] = ['keywords']
 
 # define schema for dataset
@@ -83,12 +99,20 @@ for file in path_dict:
    print("about to create df for ",file)
    if saved_files:
       df_dict[file] = pd.read_pickle(str(file))
+      # repair bad values in credits file
+      
    else:
       df_dict[file] = pd.read_csv(path_dict[file])
-   for cols in json_dict[file]:
-      print("about to ast.literal_eval ",cols)
-      # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
-      df_dict[file][cols] = df_dict[file][cols].apply(lambda x: ast.literal_eval(x))
+      # manually cleaned up credits file - TODO make this real so input more resiliant
+      #if file == 'credits':
+      #   # for rows with empty lists for their JSON columns, replace with placeholders
+      #   df_dict[file]['crew'] = df_dict[file].apply(lambda x: json_check(x['crew'], crew_placeholder),axis=1)
+      #   df_dict[file]['cast'] = df_dict[file].apply(lambda x: json_check(x['cast'], cast_placeholder),axis=1)
+      for cols in json_dict[file]:
+         print("about to ast.literal_eval ",cols)
+         # apply tranformation to render JSON strings from the CSV file into Python structures
+         # need to do this or operations cannot be performed on the structures (e.g. check_keyword_dict)
+         df_dict[file][cols] = df_dict[file][cols].apply(lambda x: ast.literal_eval(x))
    if save_files:
       df_dict[file].to_pickle(str(file))
 
@@ -253,6 +277,8 @@ class action_condition_by_movie(Action):
 #  y = any(d.get('name',None)=='midlife crisis' for d in keyword_list)
    
 
+'''
+version used for condition_by_keyword
 def check_keyword_dict(dispatcher,id,keyword_list, keyword):
    id_there = False
    # TODO: there should be a more pythonic way to do this (check if a value occurs anywhere in a list of dictionaries
@@ -264,14 +290,43 @@ def check_keyword_dict(dispatcher,id,keyword_list, keyword):
       return(id)
    else:
       return[]
+      '''
          
-      
-   
-   '''if any(d.get('name',None)==keyword for d in keyword_list):
+# version used for condition_by_cast
+def check_keyword_dict(dispatcher,id,keyword_list, keywords,dict_key):
+   # for id list id and keyword_list in JSON form, return the id value if
+   # keyword is there
+   id_there = False
+   logging.debug("about to start check_keyword_dict")
+   # make dictionary of keywords with values initialized to zero
+   k_list = {e1:0 for e1 in keywords}
+   str9 = "types id "+str(type(id))+" keyword_list "+str(type(keyword_list))+" keywords "+str(type(keywords))
+   logging.debug(str9)
+   for word in keywords:
+      str0 = "input to check_keyword_dict keyword  "+word
+      logging.debug(str0)
+   # TODO: there should be a more pythonic way to do this (check if a value occurs anywhere in a list of dictionaries
+   # that is more efficient that this loop
+   allthere = 0
+   str6 = "json.dump keyword_list is"+json.dumps(keyword_list)
+   logging.debug(str6)
+   for dict in keyword_list:
+      str5 = "dict[dict_key] is "+str(dict[dict_key])
+      logging.debug(str5)
+      #logging.debug(str(dict))
+      for word in keywords:
+         if word in dict[dict_key]:
+            str1 = "got a hit for word "+word
+            logging.debug(str1)
+            k_list[word] = 1
+   # check if all elements of keyword appear in one of the dictionaries            
+   logging.debug("about to leave check_keyword_dict")
+   if all(value == 1 for value in k_list.values()):
+      logging.warning("all values 1")
       return(id)
    else:
-      return('None')'''
-      
+      logging.debug("not all values 1")
+      return[]
 
 
 class action_condition_by_keyword(Action):
@@ -298,29 +353,23 @@ class action_condition_by_keyword(Action):
       # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
       # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
       ## TODO this is gross - need a better way to get the list of ids
-      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
-      #str3 = "here output " + str(len(output))
-      #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
-      #str5 = "len output "+ str(len(output))
-      # result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
+      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword,'name'),axis=1)))
       result_big = df_movies.loc[df_movies['id'].isin(output)]
       result = df_movies[ranked_col][df_movies['id'].isin(output)]
       limiter = int(csv_row)
       str4 = "result len " + str(len(result))
-      #dispatcher.utter_message(str(str4))
       i = 0
       for item in result:
          dispatcher.utter_message(str(item))
          i = i+1
          if i >= limiter:
             break
-      #dispatcher.utter_message(str(str3))
       dispatcher.utter_message("COMMENT: genre sublist")
       if genre != None:
          genre = slot_map[genre]
          str5 = "genre is "+genre
          dispatcher.utter_message(str(str5))
-         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre),axis=1)))
+         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre,'name'),axis=1)))
          for item in genre_output:
             dispatcher.utter_message(str(item))
             i = i+1
@@ -341,26 +390,28 @@ class action_condition_by_cast(Action):
       ranked_col = tracker.get_slot("ranked_col")
       language = tracker.get_slot("language")
       keyword = tracker.get_slot("keyword")
-      castmember = tracker.get_slot("castmember")
+      castmembers = tracker.get_slot("castmember")
       top_bottom = tracker.get_slot("top_bottom")
       csv_row = int(tracker.get_slot('row_number'))
       genre = tracker.get_slot("genre")
       sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+str(castmember[0])
+      cast_str = ", ".join(str(x) for x in castmembers)
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+cast_str
       dispatcher.utter_message(str1)
-      '''
+      
       
       df_movies=df_dict['movies']
       df_keywords = df_dict['keywords']
+      df_credits = df_dict['credits']
       ranked_col = slot_map[ranked_col]
       # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
       # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
       ## TODO this is gross - need a better way to get the list of ids
-      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword),axis=1)))
-      #str3 = "here output " + str(len(output))
+      output = list(filter(None,df_credits.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['cast'],castmembers,'name'),axis=1)))
+      str3 = "here len output " + str(len(output))
       #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
-      #str5 = "len output "+ str(len(output))
-      # result = (df[df['release_date'].str[:4] == year].sort_values(by = [sort_col],ascending=ascend_direction))[ranked_col]
+      logging.warning(str(str3))
+      
       result_big = df_movies.loc[df_movies['id'].isin(output)]
       result = df_movies[ranked_col][df_movies['id'].isin(output)]
       limiter = int(csv_row)
@@ -372,8 +423,8 @@ class action_condition_by_cast(Action):
          i = i+1
          if i >= limiter:
             break
-      #dispatcher.utter_message(str(str3))
-      dispatcher.utter_message("COMMENT: genre sublist")
+      
+      '''
       if genre != None:
          genre = slot_map[genre]
          str5 = "genre is "+genre
@@ -384,8 +435,9 @@ class action_condition_by_cast(Action):
             i = i+1
             if i >= limiter:
                break
+               '''
+      logging.warning("COMMENT: end of transmission")
       dispatcher.utter_message("COMMENT: end of transmission")
-      '''
       return []
 
 
