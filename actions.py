@@ -426,10 +426,12 @@ class action_condition_by_keyword(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-class action_condition_by_cast(Action):
+# old condition by cast where JSON columns processed natively
+
+class action_condition_by_cast_old(Action):
    """return the values scoped by cast"""
    def name(self) -> Text:
-      return "action_condition_by_cast"
+      return "action_condition_by_cast_old"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       slot_dict = tracker.current_slot_values()
       #for slot_entry in slot_dict:
@@ -488,6 +490,46 @@ class action_condition_by_cast(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
+# new condition by cast where JSON columns processed in separate dataframes rather than natively
+
+class action_condition_by_cast(Action):
+   """return the values scoped by cast"""
+   def name(self) -> Text:
+      return "action_condition_by_cast"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      slot_dict = tracker.current_slot_values()
+      #for slot_entry in slot_dict:
+      #   dispatcher.utter_message(str(slot_entry))
+      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
+      ranked_col = tracker.get_slot("ranked_col")
+      language = tracker.get_slot("language")
+      keyword = tracker.get_slot("keyword")
+      castmembers = tracker.get_slot("castmember")
+      top_bottom = tracker.get_slot("top_bottom")
+      csv_row = int(tracker.get_slot('row_number'))
+      genre = tracker.get_slot("genre")
+      sort_col = tracker.get_slot("sort_col")
+      cast_str = ", ".join(str(x) for x in castmembers)
+      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+cast_str
+      dispatcher.utter_message(str1)
+      
+      
+      df_movies=df_dict['movies']
+      df_keywords = df_dict['keywords']
+      df_cast = df_dict['credits_cast']
+      df_credits = df_dict['credits']
+      ranked_col = slot_map[ranked_col]
+      # simple query to get movie ids 
+      result = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
+      # result2 = pd.merge(result1, hour_frame, on='count', how='outer')
+      result2 = pd.merge(result,df_movies,left_on='movie_id',right_on='id')
+      #  result = df[df['original_title'] == movie][ranked_col]
+      result3 = result2['original_title']
+      for item in result3:
+         dispatcher.utter_message(item)
+      logging.warning("COMMENT: end of transmission")
+      dispatcher.utter_message("COMMENT: end of transmission")
+      return []
 
 class action_condition_by_language(Action):
    """return the values scoped by year"""
