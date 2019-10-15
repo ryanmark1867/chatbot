@@ -34,6 +34,7 @@ import pandas as pd
 import ast
 import json
 import logging
+import itertools
 # TODO figure out that even after setting logging level to debug, debug logging doesn't appear in the output
 # for now, just keep warning messages for basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -88,6 +89,15 @@ slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
 
+def add_id_to_dict(dict_list,id_name,id):
+   str2 = "dict_list is"+str(dict_list)
+   str3 = "id_name "+str(id_name)+" id "+str(id)
+   logging.debug(str2)
+   logging.debug(str3)
+   for dict in dict_list:
+      dict[id_name] = id
+   return dict_list
+
 
 # preload dataframes with datasets
 # switch to serialize dataframes
@@ -98,6 +108,7 @@ df_dict = {}
 for file in path_dict:
    print("about to create df for ",file)
    if saved_files:
+      logging.warning("loading df from pickle file for : "+str(file))
       df_dict[file] = pd.read_pickle(str(file))
       # repair bad values in credits file
       
@@ -109,14 +120,51 @@ for file in path_dict:
       #   df_dict[file]['crew'] = df_dict[file].apply(lambda x: json_check(x['crew'], crew_placeholder),axis=1)
       #   df_dict[file]['cast'] = df_dict[file].apply(lambda x: json_check(x['cast'], cast_placeholder),axis=1)
       for cols in json_dict[file]:
-         print("about to ast.literal_eval ",cols)
+         logging.warning("about to ast.literal_eval "+cols)
          # apply tranformation to render JSON strings from the CSV file into Python structures
          # need to do this or operations cannot be performed on the structures (e.g. check_keyword_dict)
          df_dict[file][cols] = df_dict[file][cols].apply(lambda x: ast.literal_eval(x))
-   if save_files:
+         # add the id all the dictionaries in the JSON format columns
+         logging.warning("about to add ids to dictionaries in "+cols+" for file "+file)
+         # df.loc[[159220]]
+         logging.warning(str(df_dict[file][cols].loc[[1]]))
+         df_dict[file][cols] = df_dict[file].apply(lambda x: add_id_to_dict(x[cols],'movie_id',x['id']),axis=1)
+         # create a new handle for the new dataframe
+         new_handle = str(file)+"_"+str(cols)
+         logging.warning("new handle is "+new_handle)
+         nh_list = df_dict[file][cols].values
+         # consolidate list of lists of dictionaries into a single list of dictionaries
+         nh_list_single = list(itertools.chain.from_iterable(nh_list))
+         df_dict[new_handle] = pd.DataFrame(nh_list_single)
+         logging.warning("post new_handle col add: "+str(df_dict[new_handle].head()))
+         # logging.warning("post new_handle col add: "+str(df_dict[new_handle].loc[[1]]))
+# load up the generated dataframes that came from JSON
+if saved_files:
+   for file in path_dict:
+      for cols in json_dict[file]:
+         new_handle = str(file)+"_"+str(cols)
+         logging.warning("loading df from pickle file for : "+new_handle)
+         df_dict[new_handle] = pd.read_pickle(str(new_handle))
+if save_files:
+   # have to go through df_dict again in a separate loop since new df_dict entries added in the above loop
+   for file in df_dict:
       df_dict[file].to_pickle(str(file))
 
 
+      
+
+
+'''
+# create new dataframes for the JSON-formatted columns
+# first, add the ID to the dictionary
+for x in elevations:
+	x['movie_id'] = 862
+# define refactored dataframe for keywords
+   # add the ID to the dictionaries in-place
+   df_dict[file][cols] = df_dict[file].apply(lambda x: add_id_to_dict(x[cols],'movie_id',x['id']))
+   new_handle = str(file)+"_"+str(cols)
+   df_dict[new_handle] = pd.DataFrame(df_dict[file][cols])
+'''
 
 
 class ActionFileColumns(Action):
