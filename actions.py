@@ -151,6 +151,36 @@ if save_files:
       df_dict[file].to_pickle(str(file))
 
 
+# load the schema dictionary
+#
+def load_schema_dict(df_dict):
+   schema_dict = {}
+   for file in df_dict:
+      schema_dict[file] = list(df_dict[file])
+      logging.warning("schema_dict for "+file+" is "+str(schema_dict[file]))
+   return(schema_dict)
+
+'''
+RESULT:
+links is ['movieId', 'imdbId', 'tmdbId']
+movies is ['adult', 'belongs_to_collection', 'budget', 'genres', 'homepage', 'id', 'imdb_id', 'original_language', 'original_title', 'overview', 'popularity', 'poster_path', 'production_companies', 'production_countries', 'release_date', 'revenue', 'runtime', 'spoken_languages', 'status', 'tagline', 'title', 'video', 'vote_average', 'vote_count']
+ratings is ['userId', 'movieId', 'rating', 'timestamp']
+credits is ['cast', 'crew', 'id']
+keywords is ['id', 'keywords']
+movies_genres is ['id', 'name', 'movie_id']
+movies_production_companies is ['name', 'id', 'movie_id']
+movies_production_countries is ['iso_3166_1', 'name', 'movie_id']
+movies_spoken_languages is ['iso_639_1', 'name', 'movie_id']
+credits_cast is ['cast_id', 'character', 'credit_id', 'gender', 'id', 'name', 'order', 'profile_path', 'movie_id']
+credits_crew is ['credit_id', 'department', 'gender', 'id', 'job', 'name', 'profile_path', 'movie_id']
+keywords_keywords is ['id', 'name', 'movie_id']
+'''
+
+# main prep code block
+schema_dict = load_schema_dict(df_dict)
+      
+
+
       
 
 
@@ -515,21 +545,22 @@ class action_condition_by_cast(Action):
       
       
       df_movies=df_dict['movies']
+      ranked_df = df_dict[ranked_col]
       df_keywords = df_dict['keywords']
       df_cast = df_dict['credits_cast']
       df_credits = df_dict['credits']
       ranked_col = slot_map[ranked_col]
       # simple query to get movie ids 
       result = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
-      # result2 = pd.merge(result1, hour_frame, on='count', how='outer')
       result2 = pd.merge(result,df_movies,left_on='movie_id',right_on='id')
-      #  result = df[df['original_title'] == movie][ranked_col]
-      result3 = result2['original_title']
-      for item in result3:
+      for item in result2['original_title']:
          dispatcher.utter_message(item)
       logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission")
+      dispatcher.utter_message("COMMENT: end of transmission validated")
       return []
+
+
+   
 
 class action_condition_by_language(Action):
    """return the values scoped by year"""
