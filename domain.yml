@@ -28,7 +28,8 @@ entities:
 - language
 - keyword
 - genre
-- castmember
+- cast_name
+- character
 slots:
   ascending_descending:
     type: categorical
@@ -38,8 +39,10 @@ slots:
     - descending
   budget:
     type: text
-  castmember:
+  cast_name:
     type: list
+  character:
+    type: text
   condition_col:
     type: list
   condition_operator:
