@@ -16,9 +16,9 @@
 ## New Story
 * greet
     - utter_what_next
-* condition_by_cast{"ranked_col":"movies","castmember":"Jack Lemmon"}
+* condition_by_cast{"ranked_col":"movies","cast_name":"Jack Lemmon"}
     - slot{"ranked_col":"movies"}
-    - slot{"castmember":"Jack Lemmon"}
+    - slot{"cast_name":"Jack Lemmon"}
     - action_condition_by_cast
 
 ## say goodbye

@@ -6,10 +6,14 @@
 - correct
 
 ## intent:condition_by_cast
-- list [movies](ranked_col) with [Marilyn Monroe](castmember)
-- list [movies](ranked_col) with [Jack Lemmon](castmember)
-- list [movies](ranked_col) with [Marilyn Monroe](castmember) and [Jack Lemmon](castmember)
-- [movies](ranked_col) with [Marilyn Monroe](castmember) and [Jack Lemmon](castmember)
+- list [movies](ranked_col) with [Marilyn Monroe](cast_name)
+- list [movies](ranked_col) with [Jack Lemmon](cast_name)
+- list [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
+- [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
+- list [movies](ranked_col) with [Marilyn Monroe](cast_name) and [Jack Lemmon](cast_name)
+- [movies](ranked_col) with [Marilyn Monroe](cast_name) and [Jack Lemmon](cast_name)
+- [characters](ranked_col) played by [Tom Hanks](cast_name)
+- what are the [characters](ranked_col) played by [Tom Hanks](cast_name)
 
 ## intent:condition_by_keyword
 - list [movies](ranked_col) about [midlife crisis](keyword)
