@@ -1,30 +1,8 @@
-# This files contains your custom actions which can be used to run
-# custom Python code.
-#
-# See this guide on how to implement these action:
-# https://rasa.com/docs/rasa/core/actions/#custom-actions/
+# Custom actions for filebot project
 
+# property of KarmaAI
 
-# This is a simple example for a custom action which utters "Hello World!"
-
-# from typing import Any, Text, Dict, List
-#
-# from rasa_sdk import Action, Tracker
-# from rasa_sdk.executor import CollectingDispatcher
-#
-#
-# class ActionHelloWorld(Action):
-#
-#     def name(self) -> Text:
-#         return "action_hello_world"
-#
-#     def run(self, dispatcher: CollectingDispatcher,
-#             tracker: Tracker,
-#             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-#
-#         dispatcher.utter_message("Hello World!")
-#
-#         return []
+# common imports
 
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
@@ -40,7 +18,9 @@ import itertools
 logging.basicConfig(level=logging.DEBUG)
 logging.warning("logging check")
 
-def json_check(string, placeholder):
+def json_check(string, placeholder): 
+   ''' input string and placeholder JSON. If string parses as valid Python, return result of literal_eval.
+   Otherwise, return placeholder string'''
    try:
       testarray = ast.literal_eval(string)
    except ValueError as e:
@@ -91,11 +71,12 @@ slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
 
 
 # define the subset of slots that can be condition columns:
-# TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title"
+# TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
 slot_condition_columns = ["original_language","original_title","movie","budget","overview","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
+   ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
    str2 = "dict_list is"+str(dict_list)
    str3 = "id_name "+str(id_name)+" id "+str(id)
    logging.debug(str2)
@@ -105,7 +86,9 @@ def add_id_to_dict(dict_list,id_name,id):
    return dict_list
 
 
-# preload dataframes with datasets
+# load df_dict dictionary with dataframes corresponding to the datasets
+# if saved_files, load from pickled dataframes created previously by this code block
+# if save_files, save the 
 # switch to serialize dataframes
 save_files = False
 # switch to load from serialized dataframes
@@ -114,17 +97,13 @@ df_dict = {}
 for file in path_dict:
    print("about to create df for ",file)
    if saved_files:
+      # load pickled file corresponding to dataframes for the dataset files
+      # pickled files for derived dataframes loaded below
       logging.warning("loading df from pickle file for : "+str(file))
       df_dict[file] = pd.read_pickle(str(file))
-      # repair bad values in credits file
-      
    else:
       df_dict[file] = pd.read_csv(path_dict[file])
       # manually cleaned up credits file - TODO make this real so input more resiliant
-      #if file == 'credits':
-      #   # for rows with empty lists for their JSON columns, replace with placeholders
-      #   df_dict[file]['crew'] = df_dict[file].apply(lambda x: json_check(x['crew'], crew_placeholder),axis=1)
-      #   df_dict[file]['cast'] = df_dict[file].apply(lambda x: json_check(x['cast'], cast_placeholder),axis=1)
       for cols in json_dict[file]:
          logging.warning("about to ast.literal_eval "+cols)
          # apply tranformation to render JSON strings from the CSV file into Python structures
@@ -132,7 +111,6 @@ for file in path_dict:
          df_dict[file][cols] = df_dict[file][cols].apply(lambda x: ast.literal_eval(x))
          # add the id all the dictionaries in the JSON format columns
          logging.warning("about to add ids to dictionaries in "+cols+" for file "+file)
-         # df.loc[[159220]]
          logging.warning(str(df_dict[file][cols].loc[[1]]))
          df_dict[file][cols] = df_dict[file].apply(lambda x: add_id_to_dict(x[cols],'movie_id',x['id']),axis=1)
          # create a new handle for the new dataframe
@@ -141,23 +119,27 @@ for file in path_dict:
          nh_list = df_dict[file][cols].values
          # consolidate list of lists of dictionaries into a single list of dictionaries
          nh_list_single = list(itertools.chain.from_iterable(nh_list))
+         # define new dataframe with distinct columns for each range in the original df's JSON column
+         # and add new dataframe to df_dict
          df_dict[new_handle] = pd.DataFrame(nh_list_single)
          logging.warning("post new_handle col add: "+str(df_dict[new_handle].head()))
-         # logging.warning("post new_handle col add: "+str(df_dict[new_handle].loc[[1]]))
+        
 # load up the generated dataframes that came from JSON
 if saved_files:
    for file in path_dict:
       for cols in json_dict[file]:
+         # load pickled files corresponding to dataframes generated from JSON columns in original dataset
          new_handle = str(file)+"_"+str(cols)
          logging.warning("loading df from pickle file for : "+new_handle)
          df_dict[new_handle] = pd.read_pickle(str(new_handle))
 if save_files:
    # have to go through df_dict again in a separate loop since new df_dict entries added in the above loop
+   # save all the dataframes in the df_dict dictionary in separate pickle files
    for file in df_dict:
       df_dict[file].to_pickle(str(file))
 
 
-# load the schema dictionary
+# load the schema dictionary with "table":[colum1,column2...] 
 #
 def load_schema_dict(df_dict):
    schema_dict = {}
@@ -183,7 +165,6 @@ keywords_keywords is ['id', 'name', 'movie_id']
 '''
 
 # rename some columns to avoid duplicates
-# df.rename({'a': 'X', 'b': 'Y'}, axis=1, inplace=True)
 df_dict['movies_genres'].rename({'name':'genre_name'},axis=1,inplace=True)
 df_dict['movies_production_companies'].rename({'name':'movies_production_company_name'},axis=1,inplace=True)
 df_dict['movies_production_countries'].rename({'name':'movies_production_country_name'},axis=1,inplace=True)
@@ -191,13 +172,18 @@ df_dict['movies_spoken_languages'].rename({'name':'movies_language_name'},axis=1
 df_dict['credits_cast'].rename({'name':'cast_name'},axis=1,inplace=True)
 df_dict['credits_crew'].rename({'name':'crew_name'},axis=1,inplace=True)
 df_dict['keywords_keywords'].rename({'name':'keyword_name'},axis=1,inplace=True)
+# generate separate 'year' column from 'release_date'
 df_dict['movies']['year'] = df_dict['movies']['release_date'].str[:4]
 
+# define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
+# credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
 parent_key = 'id'
 child_key = 'movie_id'
 
 # main prep code block
 movie_schema = load_schema_dict(df_dict)
+
+# classes for individual custom actions triggered by Rasa
       
 class ActionFileColumns(Action):
    """ return the column names for a file """
@@ -439,60 +425,10 @@ class action_condition_by_keyword(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-# old condition by cast where JSON columns processed natively
-
-class action_condition_by_cast_old(Action):
-   """return the values scoped by cast"""
-   def name(self) -> Text:
-      return "action_condition_by_cast_old"
-   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      slot_dict = tracker.current_slot_values()
-      #for slot_entry in slot_dict:
-      #   dispatcher.utter_message(str(slot_entry))
-      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
-      ranked_col = tracker.get_slot("ranked_col")
-      language = tracker.get_slot("language")
-      keyword = tracker.get_slot("keyword")
-      castmembers = tracker.get_slot("castmember")
-      top_bottom = tracker.get_slot("top_bottom")
-      csv_row = int(tracker.get_slot('row_number'))
-      genre = tracker.get_slot("genre")
-      sort_col = tracker.get_slot("sort_col")
-      cast_str = ", ".join(str(x) for x in castmembers)
-      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+cast_str
-      dispatcher.utter_message(str1)
-      
-      
-      df_movies=df_dict['movies']
-      df_keywords = df_dict['keywords']
-      df_credits = df_dict['credits']
-      ranked_col = slot_map[ranked_col]
-      # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
-      # df_keywords['keywords'] = df_keywords['keywords'].apply(lambda x: ast.literal_eval(x))
-      ## TODO this is gross - need a better way to get the list of ids
-      output = list(filter(None,df_credits.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['cast'],castmembers,'name'),axis=1)))
-      str3 = "here len output " + str(len(output))
-      #str3 = "here 0 "+str(output[0]) +" here 1 "+ str(output[1])
-      logging.warning(str(str3))
-      
-      result_big = df_movies.loc[df_movies['id'].isin(output)]
-      result = df_movies[ranked_col][df_movies['id'].isin(output)]
-      limiter = int(csv_row)
-      str4 = "result len " + str(len(result))
-      #dispatcher.utter_message(str(str4))
-      i = 0
-      for item in result:
-         dispatcher.utter_message(str(item))
-         i = i+1
-         if i >= limiter:
-            break
-      logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission")
-      return []
-
 # TODO: instead of the complex multifaceted structure of various dictionaries and lists, encapsulate in a class
 # to make the updates simpler and to avoid losing track of what's a list vs. dictionary
 
+# helper function for refactored main class action_condition_by_movie
 
 def execute_query (condition_col, condition_table, condition_value, condition_operator,top_bottom,ascending_descending,ranked_col, returned_values):
    """ perform query on specified table """
@@ -512,6 +448,7 @@ def get_table(column_list,schema):
    return(table_list)
 
 def get_condition_columns(slot_dict):
+   ''' given a slot dictionary, return dictionary of condition columns whose slots are filled in '''
    condition_dict = {}
    for slot in slot_dict:
       logging.warning("in gcc slot is "+str(slot))
@@ -524,13 +461,15 @@ def get_condition_columns(slot_dict):
    return(condition_dict)
 
 def same_table(condition_table, ranked_table):
-   ''' return true if both lists have exactly one element which is the same. Otherwise return false '''
+   ''' return true if both lists have exactly one element, and this element which is the same. Otherwise return false '''
    if len(condition_table) == 1 and len(ranked_table) == 1:
       return(condition_table[0] == ranked_table[0])
    else:
       return(False)
     
-# new condition by cast where JSON columns processed in separate dataframes rather than natively
+# new condition_by_movie class:
+#     - JSON columns processed in separate dataframes rather than native
+#     - code generalized to handle a wide variety of queries
 # TO DO: SWITCH TO condition_by_movie to test an "all the same table" query
 
 class action_condition_by_movie(Action):
@@ -636,42 +575,7 @@ class action_condition_by_movie(Action):
       dispatcher.utter_message("COMMENT: end of transmission validated")
       return []
 
-class action_condition_by_cast_nold(Action):
-   """return the values scoped by cast"""
-   def name(self) -> Text:
-      return "action_condition_by_cast_nold"
-   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      slot_dict = tracker.current_slot_values()
-      #for slot_entry in slot_dict:
-      #   dispatcher.utter_message(str(slot_entry))
-      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
-      ranked_col = tracker.get_slot("ranked_col")
-      language = tracker.get_slot("language")
-      keyword = tracker.get_slot("keyword")
-      castmembers = tracker.get_slot("castmember")
-      top_bottom = tracker.get_slot("top_bottom")
-      csv_row = int(tracker.get_slot('row_number'))
-      genre = tracker.get_slot("genre")
-      sort_col = tracker.get_slot("sort_col")
-      cast_str = ", ".join(str(x) for x in castmembers)
-      str1 = "COMMENT: getting "+ str(ranked_col) + " for cast "+cast_str
-      dispatcher.utter_message(str1)
-      
-      
-      df_movies=df_dict['movies']
-      ranked_df = df_dict[ranked_col]
-      df_keywords = df_dict['keywords']
-      df_cast = df_dict['credits_cast']
-      df_credits = df_dict['credits']
-      ranked_col = slot_map[ranked_col]
-      # simple query to get movie ids 
-      movie_ids = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
-      result2 = pd.merge(movie_ids,df_movies,left_on='movie_id',right_on='id')
-      for item in result2['original_title']:
-         dispatcher.utter_message(item)
-      logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission validated")
-      return []
+
    
 
 class action_condition_by_language(Action):
@@ -702,7 +606,7 @@ class action_condition_by_language(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
- 
+# Property of KarmaAI 
                 
 
 
