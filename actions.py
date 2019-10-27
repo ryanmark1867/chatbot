@@ -73,7 +73,8 @@ json_dict['keywords'] = ['keywords']
 # define synonyms (TODO see how to move at least a subset of these to Rasa level so they don't have to be maintained at Python layer)
 slot_map = dict.fromkeys(['movies','movie name','movie','title','original_title'],'original_title')
 slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview'],'overview'))
-slot_map.update(dict.fromkeys(['year','release date','release_date'],'release_date'))
+slot_map.update(dict.fromkeys(['release date','release_date'],'release_date'))
+slot_map.update(dict.fromkeys(['year'],'year'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
 slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
@@ -190,6 +191,7 @@ df_dict['movies_spoken_languages'].rename({'name':'movies_language_name'},axis=1
 df_dict['credits_cast'].rename({'name':'cast_name'},axis=1,inplace=True)
 df_dict['credits_crew'].rename({'name':'crew_name'},axis=1,inplace=True)
 df_dict['keywords_keywords'].rename({'name':'keyword_name'},axis=1,inplace=True)
+df_dict['movies']['year'] = df_dict['movies']['release_date'].str[:4]
 
 parent_key = 'id'
 child_key = 'movie_id'
