@@ -66,28 +66,33 @@ json_dict['links'] = []
 json_dict['movies'] = ['genres','production_companies','production_countries','spoken_languages',]
 json_dict['ratings'] = []
 json_dict['credits'] = ['cast','crew']
-# json_dict['credits'] = []
 json_dict['keywords'] = ['keywords']
 
-# define schema for dataset
-movie_schema = {"ratings_small":["userId", "movieId","rating","timestamp"],
-                "credit_small":["cast","crew","id"],
-                "movies_metadata_small":["adult","belongs_to_collection","budget","genres","homepage","id","imdb_id","original_language","original_title",
-                "overview","popularity","poster_path","production_companies","production_countries","release_date","revenue","runtime","spoken_languages",
-                "status	tagline	title","video","vote_average","vote_count"],
-                "keywords_small":["id","keywords"],
-                "links_small":["movieId","imdbId","tmdbId"]}
 
+# map various strings to correct column names
 # define synonyms (TODO see how to move at least a subset of these to Rasa level so they don't have to be maintained at Python layer)
-slot_map = dict.fromkeys(['movies','movie name','title'],'original_title')
-slot_map.update(dict.fromkeys(['plot','plot summary','plot statement'],'overview'))
-slot_map.update(dict.fromkeys(['year','release date'],'release_date'))
+slot_map = dict.fromkeys(['movies','movie name','movie','title','original_title'],'original_title')
+slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview'],'overview'))
+slot_map.update(dict.fromkeys(['year','release date','release_date'],'release_date'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
 slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
 slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
+slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
+slot_map.update(dict.fromkeys(['cast','castmember','cast_name'], 'cast_name'))
+slot_map.update(dict.fromkeys(['crew','crewmember','crew_name'], 'crew_name'))
+slot_map.update(dict.fromkeys(['language','movies_language_name'], 'movies_language_name'))
+slot_map.update(dict.fromkeys(['genre','genre_name'], 'genre_name'))
+slot_map.update(dict.fromkeys(['keyword','keyword_name'], 'keyword_name'))
+slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
+
+
+# define the subset of slots that can be condition columns:
+# TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title"
+# TODO determine if possible to generate this list automatically instead of hand creating it
+slot_condition_columns = ["original_language","original_title","movie","budget","overview","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    str2 = "dict_list is"+str(dict_list)
@@ -176,27 +181,22 @@ credits_crew is ['credit_id', 'department', 'gender', 'id', 'job', 'name', 'prof
 keywords_keywords is ['id', 'name', 'movie_id']
 '''
 
+# rename some columns to avoid duplicates
+# df.rename({'a': 'X', 'b': 'Y'}, axis=1, inplace=True)
+df_dict['movies_genres'].rename({'name':'genre_name'},axis=1,inplace=True)
+df_dict['movies_production_companies'].rename({'name':'movies_production_company_name'},axis=1,inplace=True)
+df_dict['movies_production_countries'].rename({'name':'movies_production_country_name'},axis=1,inplace=True)
+df_dict['movies_spoken_languages'].rename({'name':'movies_language_name'},axis=1,inplace=True)
+df_dict['credits_cast'].rename({'name':'cast_name'},axis=1,inplace=True)
+df_dict['credits_crew'].rename({'name':'crew_name'},axis=1,inplace=True)
+df_dict['keywords_keywords'].rename({'name':'keyword_name'},axis=1,inplace=True)
+
+parent_key = 'id'
+child_key = 'movie_id'
+
 # main prep code block
-schema_dict = load_schema_dict(df_dict)
+movie_schema = load_schema_dict(df_dict)
       
-
-
-      
-
-
-'''
-# create new dataframes for the JSON-formatted columns
-# first, add the ID to the dictionary
-for x in elevations:
-	x['movie_id'] = 862
-# define refactored dataframe for keywords
-   # add the ID to the dictionaries in-place
-   df_dict[file][cols] = df_dict[file].apply(lambda x: add_id_to_dict(x[cols],'movie_id',x['id']))
-   new_handle = str(file)+"_"+str(cols)
-   df_dict[new_handle] = pd.DataFrame(df_dict[file][cols])
-'''
-
-
 class ActionFileColumns(Action):
    """ return the column names for a file """
    def name(self) -> Text:
@@ -323,10 +323,10 @@ class action_condition_by_year(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-class action_condition_by_movie(Action):
+class action_condition_by_movie_old(Action):
    """return the values scoped by movie"""
    def name(self) -> Text:
-      return "action_condition_by_movie"
+      return "action_condition_by_movie_old"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       slot_dict = tracker.current_slot_values()
       #for slot_entry in slot_dict:
@@ -350,26 +350,7 @@ class action_condition_by_movie(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-# syntax to determine if a value exists in a an array of dictionaries:
-# keyword_list = [{'id': 1009, 'name': 'baby'}, {'id': 1599, 'name': 'midlife crisis'}, {'id': 2246, 'name': 'confidence'}, {'id': 4995, 'name': 'aging'}, {'id': 5600, 'name': 'daughter'}, {'id': 10707, 'name': 'mother daughter relationship'}, {'id': 13149, 'name': 'pregnancy'}, {'id': 33358, 'name': 'contraception'}, {'id': 170521, 'name': 'gynecologist'}]
-#  y = any(d.get('name',None)=='midlife crisis' for d in keyword_list)
-   
-
-'''
-version used for condition_by_keyword
-def check_keyword_dict(dispatcher,id,keyword_list, keyword):
-   id_there = False
-   # TODO: there should be a more pythonic way to do this (check if a value occurs anywhere in a list of dictionaries
-   # that is more efficient that this loop 
-   for dict in keyword_list:
-      if keyword in dict.values():
-         id_there = True
-   if id_there:
-      return(id)
-   else:
-      return[]
-      '''
-         
+        
 # version used for condition_by_cast
 def check_keyword_dict(dispatcher,id,keyword_list, keywords,dict_key):
    # for id list id and keyword_list in JSON form, return the id value if
@@ -503,29 +484,160 @@ class action_condition_by_cast_old(Action):
          i = i+1
          if i >= limiter:
             break
-      
-      '''
-      if genre != None:
-         genre = slot_map[genre]
-         str5 = "genre is "+genre
-         dispatcher.utter_message(str(str5))
-         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre),axis=1)))
-         for item in genre_output:
-            dispatcher.utter_message(str(item))
-            i = i+1
-            if i >= limiter:
-               break
-               '''
       logging.warning("COMMENT: end of transmission")
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-# new condition by cast where JSON columns processed in separate dataframes rather than natively
+# TODO: instead of the complex multifaceted structure of various dictionaries and lists, encapsulate in a class
+# to make the updates simpler and to avoid losing track of what's a list vs. dictionary
 
-class action_condition_by_cast(Action):
+
+def execute_query (condition_col, condition_table, condition_value, condition_operator,top_bottom,ascending_descending,ranked_col, returned_values):
+   """ perform query on specified table """
+   return_values = condition_table[condition_table[condition_col] == condition_value][ranked_col]
+   return(return_values)
+
+def get_table(column_list,schema):
+   """ return the table that contains the given column in the given schema dictionary"""
+   table_list = []
+   for table in schema:
+      logging.warning("get_table table is: "+str(table))
+      for column in column_list:
+         logging.warning("get_table column is: "+str(column))
+         if column in schema[table]:
+            logging.warning("get_table got table "+str(table)+" for column: "+str(column))
+            table_list.append(table)
+   return(table_list)
+
+def get_condition_columns(slot_dict):
+   condition_dict = {}
+   for slot in slot_dict:
+      logging.warning("in gcc slot is "+str(slot))
+      logging.warning("in gcc slot_dict[slot] "+str(slot_dict[slot]))
+      # check  if slot is a candidate for condition column and that it's not empty
+      if not(slot_dict[slot] is None) and (slot in slot_condition_columns):
+         logging.warning("get_condition_columns found "+str(slot))
+         condition_dict[slot]= slot_dict[slot]
+         #condition_col.append(slot)
+   return(condition_dict)
+
+def same_table(condition_table, ranked_table):
+   ''' return true if both lists have exactly one element which is the same. Otherwise return false '''
+   if len(condition_table) == 1 and len(ranked_table) == 1:
+      return(condition_table[0] == ranked_table[0])
+   else:
+      return(False)
+    
+# new condition by cast where JSON columns processed in separate dataframes rather than natively
+# TO DO: SWITCH TO condition_by_movie to test an "all the same table" query
+
+class action_condition_by_movie(Action):
    """return the values scoped by cast"""
    def name(self) -> Text:
-      return "action_condition_by_cast"
+      return "action_condition_by_movie"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      # get dictionary of slot values
+      slot_dict = tracker.current_slot_values()
+      for table in movie_schema:
+         logging.warning("table is: "+str(table))
+      for slot_entry in slot_dict:
+         logging.warning("in slot_entry loop slot_entry is: "+str(slot_entry))
+         logging.warning("in slot_entry loop slot_dict[slot_entry] is: "+str(slot_dict[slot_entry]))
+         if slot_entry in slot_condition_columns:
+            logging.warning("in slot_condition_columns for slot_entry: "+str(slot_entry))
+            # syntax to replace key value
+            # dictionary[new_key] = dictionary.pop(old_key)
+            slot_dict[slot_map[slot_entry]] = slot_dict.pop(slot_entry)
+            logging.warning("in slot_condition_columns new key set for "+str(slot_map[slot_entry]))
+         logging.warning("after "+str(slot_entry))
+      # need to examine slot_dict for "None"s to determine condition_col
+      slot_dict["ranked_col"] = slot_map[slot_dict["ranked_col"]]
+      condition_dict = {}
+      condition_dict = get_condition_columns(slot_dict)
+      # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
+      condition_table = get_table(list(condition_dict.keys()),movie_schema)
+      ranked_table = get_table([slot_dict["ranked_col"]],movie_schema)
+      
+      logging.warning("condition_dict is "+str(condition_dict))
+      logging.warning("condition_table is "+str(condition_table))
+      logging.warning("ranked_cod is "+str(slot_dict["ranked_col"]))
+      logging.warning("ranked_table is "+str(ranked_table))
+      '''
+      EXAMPLE OF CONDITION LIST
+      - condition_dict is {'cast_name': ['Sean Connery']}
+      - condition_table is ['credits_cast']
+      - ranked_cod is original_title
+      - ranked_table is ['movies']
+
+      EXAMPLE OF CONDITION NOT A LIST
+      condition_dict is {'original_title': 'Toy Story'}
+      condition_table is ['movies']
+      ranked_cod is budget
+      ranked_table is ['movies']
+      '''
+      # TODO lowercase strings for comparison
+      result = {}
+      if same_table(condition_table, ranked_table):
+         logging.warning("same table "+str(condition_table))
+         base_df = df_dict[ranked_table[0]]
+         # iterate through conditions keeping all columns
+         for condition in condition_dict:
+            logging.warning("in single table condition loop for condition "+str(condition))
+            base_df = base_df[base_df[condition] == condition_dict[condition]]
+         result = base_df[slot_dict["ranked_col"]]
+      else:
+         logging.warning("different condition_table"+str(condition_table)+" ranked_table "+str(ranked_table))
+         '''
+         # condition and rank in different tables
+         first_condition = True
+         for condition in condition_dict:
+            # check if condition value is a list
+            if isinstance(condition_dict[condition], list)
+               # TODO complete logic for dealing with conditions that are lists
+            else:
+               # condition is not a list
+               child_key_df = df_dict[condition_table[0]][df_dict[condition_table[0]][condition] == value][child_key]
+               if first_condition:
+                  first_condition = False
+                  child_key_df = df_dict[condition_table[0]][df_dict[condition_table[0]][condition] == value][child_key]
+               result_list = {}
+               for value in condition_dict[condition]:
+                  logging.warning("value in condition_dict value"+str(value)+" and condition_dict[value] "+str(condition_dict[value]))
+                  result_list[value] = df_dict[condition_table[0]][df_dict[condition_table[0]][condition] == condition_dict[value]][child_key]
+                  result_list[value] =
+          '''        
+      # ranked_col = slot_dict["ranked_col"]
+      #if same_table(condition_table, ranked_table)
+      #output = df_dict[condition_table[0]][df_dict[condition_table[0]][condition_col[0] == slot_dict["
+
+      '''
+      df_movies=df_dict['movies']
+      ranked_df = df_dict[ranked_col]
+      df_keywords = df_dict['keywords']
+      df_cast = df_dict['credits_cast']
+      df_credits = df_dict['credits']
+      ranked_col = slot_map[ranked_col]
+      # simple query to get movie ids 
+      movie_ids = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
+      result2 = pd.merge(movie_ids,df_movies,left_on='movie_id',right_on='id')
+      '''
+      for result_item in result:
+         logging.warning("in output loop ")
+         logging.warning("result for re "+str(slot_dict["ranked_col"])+" is "+str(result_item))
+         dispatcher.utter_message("result for condition "+str(slot_dict["ranked_col"])+" is "+str(result_item))
+      '''                   
+      for result_set in result:
+         for item in result_set[slot_dict["ranked_col"]]:
+            dispatcher.utter_message(item)
+      '''
+      logging.warning("COMMENT: end of transmission")
+      dispatcher.utter_message("COMMENT: end of transmission validated")
+      return []
+
+class action_condition_by_cast_nold(Action):
+   """return the values scoped by cast"""
+   def name(self) -> Text:
+      return "action_condition_by_cast_nold"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       slot_dict = tracker.current_slot_values()
       #for slot_entry in slot_dict:
@@ -551,15 +663,13 @@ class action_condition_by_cast(Action):
       df_credits = df_dict['credits']
       ranked_col = slot_map[ranked_col]
       # simple query to get movie ids 
-      result = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
-      result2 = pd.merge(result,df_movies,left_on='movie_id',right_on='id')
+      movie_ids = df_cast[df_cast['name'] == castmembers[0]]['movie_id']
+      result2 = pd.merge(movie_ids,df_movies,left_on='movie_id',right_on='id')
       for item in result2['original_title']:
          dispatcher.utter_message(item)
       logging.warning("COMMENT: end of transmission")
       dispatcher.utter_message("COMMENT: end of transmission validated")
       return []
-
-
    
 
 class action_condition_by_language(Action):
@@ -590,57 +700,7 @@ class action_condition_by_language(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return []
 
-'''
-class ActionRankColByOtherCol(Action):
-   """return the list of values from one column ranked according to another column"""
-   def name(self) -> Text:
-      return "action_rank_col_by_other_col"
-   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      slot_dict = tracker.current_slot_values()
-      for entry in slot_dict:
-         # print "key: %s , value: %s" % (key, mydictionary[key])
-         dispatcher.utter_message(str(entry))
-         dispatcher.utter_message(str(slot_dict[entry])
-      return []
-
-
-   
-            # give me the top 5 movies by budget
-      # give me the [top_bottom] [row_range] [ranked_col} by [ranking_col]
-      # give me the top 5 French movies by budget
-      # give me the [top_bottom] [row_range] [ranked_col] by [ranking_col] where [condition_col] [condition_operator] [condition_value]
-      # top movies from 2004
-      # [top_bottom] [ranked_col] [by [ranking_col] assumed to be [popularity]] [condition_col][condition_value]
-      # slots:
-      # ranked_col
-      # ranking_col
-      # ascending_descending
-      # top_bottom
-      # condition_col - list
-      # condition_value - list
-      # condition_operator
-      #
-      # in SQL parlance
-      # select ranked_col from table where condition_col[0] condition_operator condition_value[0] and condition_col[1] condition_operator condition_value[1]
-
-      # ranked_col = tracker.get_slot('ranked_col')
-      # ranking_col = tracker.get_slot('ranking_col') - this is redundant; condition_col covers this
-      #ascending_descending = tracker.get_slot('ascending_descending')
-      #top_bottom = tracker.get_slot('top_bottom')
-      #row_range = int(tracker.get_slot('row_range'))
-      #condition_col = tracker.get_slot('condition_col')
-      #condition_value = tracker.get_slot('condition_value')
-      #condition_operator = tracker.get_slot('condition_operator')
-      # get and print all currently set values of the slots
-      #
-      # in Python parlance, assuming all cols are in dataframe df
-      #
-      # result = df[df.condition_col[0] condition_operator condition_value[0]].ranked_col
-      # example: streetcarjan2014[streetcarjan2014.Location == "King and Shaw"].Route
-
-      # movie db schema
-      ''''''
-''' 
+ 
                 
 
 
