@@ -568,7 +568,7 @@ class action_condition_by_movie(Action):
                # build df that just contains child_keys for this
                child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][child_key]
                # len(DataFrame.index)
-               logging.warning("number of rows "+str(condition)) 
+               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index))) 
                
          for condition in condition_table:
             # iteratively merge child key tables
@@ -580,15 +580,31 @@ class action_condition_by_movie(Action):
                # pd.merge(df1, df2, on='Customer_id', how='inner')
                result_child_merge = pd.merge(result_child_merge,child_key_df_dict[condition],on=child_key,how='inner')
          # now merge with parent table
+         logging.warning("number of rows in child_key_df "+str(len(result_child_merge.index)))
+         logging.warning("type of result_child_merge is "+str(type(type(result_child_merge))))
+         # for index, row in df.iterrows():
+         #print(row.to_frame().T)
+         #for index, row in result_child_merge.iterrows():
+         #    logging.warning("row of result_child_merge "+str(row.to_frame().T))
+         for item_c in result_child_merge:
+            logging.warning("item is "+str(item_c))
          first_final = True
          for condition in ranked_table:
              # TODO need to find a way to get the ranked table if there are multiple ranked columns
-             logging.warning("in final ranked table loop for condition "+str(condition))               
-             result[condition] = (pd.merge(result_child_merge,df_dict[ranked_table[condition]],left_on=child_key,right_on=parent_key,how='inner'))[condition]
+             logging.warning("in final ranked table loop for condition "+str(condition))
+             #logging.warning("in final ranked number rows ranked_table[condition] "+str(condition)
+             result[condition] = pd.merge(df_dict[ranked_table[condition]],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[condition]
+             #result[condition] = pd.merge(ranked_table,result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[condition]
+      logging.warning("number of rows in result "+str(len(result))) 
+          
       for result_item in result:
+         logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
          logging.warning("in output loop ")
-         logging.warning("result for re "+str(slot_dict["ranked_col"])+" is "+str(result_item)+ str(result[result_item]))
-         dispatcher.utter_message("result for condition "+str(slot_dict["ranked_col"])+" is "+str(result[result_item]))
+         for nested_item in result[result_item]:
+            logging.warning(str(nested_item))
+            dispatcher.utter_message(str(nested_item))
+         #logging.warning("result for re "+str(slot_dict["ranked_col"])+" is "+str(result_item)+ str(result[result_item]))
+         #dispatcher.utter_message("result for condition "+str(slot_dict["ranked_col"])+" is "+str(result[result_item]))
       '''                   
       for result_set in result:
          for item in result_set[slot_dict["ranked_col"]]:
