@@ -16,17 +16,24 @@
 - what are the [characters](ranked_col) played by [Tom Hanks](cast_name)
 
 ## intent:condition_by_keyword
+
+
+
+## intent:condition_by_movie
 - list [movies](ranked_col) about [midlife crisis](keyword)
+- list [movies](ranked_col) about [murder](keyword)
+- list [murder](keyword) [movies](ranked_col)
 - list [movies](ranked_col) about [vampires](keyword)
 - list [midlife crisis](keyword) [movies](ranked_col)
 - list [movies](ranked_col) about [usa president](keyword]
 - list [funny](genre) [vampire](keyword) [movies](ranked_col)
 - [funny](genre) [movies](ranked_col) about [vampires](keyword)
 - [funny](genre) [vampire](keyword) [movies](ranked_col)
-
-## intent:condition_by_movie
 - what is the [plot](ranked_col) for [Taxi Driver](movie)
+- [plot](ranked_col) for [Taxi Driver](movie)
 - what is the [plot](ranked_col) for [Toy Story](movie)
+- plot](ranked_col) for [Toy Story](movie)
+- what is the [plot](ranked_col) for [GoldenEye](movie)
 - show me the [plot](ranked_col) for [The Exorcist](movie)
 - what's the [plot](ranked_col) of [Braveheart](movie)
 - show me the [plot](ranked_col) for [Taxi Driver](movie)
@@ -39,6 +46,7 @@
 - what [year](ranked_col) did [Taxi Driver](movie) come out
 - what [year](ranked_col) did [Braveheart](movie) come out
 - what was the [budget](ranked_col) for [Goldfinger](movie)
+- what was the [budget](ranked_col) for [GoldenEye](movie)
 - what was the [budget](ranked_col) for [Taxi Driver](movie)
 - what was the [budget](ranked_col) for [Jaws](movie)
 - what was the [budget](ranked_col) for [The Exorcist](movie)

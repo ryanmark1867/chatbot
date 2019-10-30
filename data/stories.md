@@ -188,9 +188,9 @@
 
 * greet
     - utter_what_next
-* condition_by_keyword{"ranked_col":"movies","keyword":"midlife crisis"}
+* condition_by_movie{"ranked_col":"movies","keyword":"midlife crisis"}
     - slot{"ranked_col":"movies"}
     - slot{"keyword":"midlife crisis"}
-    - action_condition_by_keyword
+    - action_condition_by_movie
 	
 	
