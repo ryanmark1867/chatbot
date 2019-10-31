@@ -565,7 +565,27 @@ class action_condition_by_movie(Action):
                logging.warning("condition_dict is a list "+str(condition))
                # df[df['A'].isin([3, 6])]
                # df[df.name.str.contains('|'.join(search_values ))]
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains('&'.join(condition_dict[condition]))][child_key]
+               # child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains('|'.join(condition_dict[condition]))][child_key]
+               sub_condition_df_dict = {}
+               # iterate through each element in the condition value list getting a df of matching child keys
+               for sub_condition in condition_dict[condition]:
+                  logging.warning("sub_condition is "+str(sub_condition))
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][child_key]
+                  logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
+                  logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
+               logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
+               # merge the child key dfs to get a single df containing the intersection of child keys
+               first_sub_condition = True
+               for sub_condition in sub_condition_df_dict:
+                  logging.warning("sub_condition in merge loop is "+str(sub_condition))
+                  if first_sub_condition:
+                     first_sub_condition = False
+                     child_key_df_dict[condition] = sub_condition_df_dict[sub_condition]
+                  else:
+                     child_key_df_dict[condition] = pd.merge(child_key_df_dict[condition],sub_condition_df_dict[sub_condition],on=child_key,how='inner')
+                  logging.warning("sub_condition child_key_df_dict[condition] len is "+str(len(child_key_df_dict[condition])))
+               
+
                logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
             else:
                # condition is not a list
