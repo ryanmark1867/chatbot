@@ -73,7 +73,7 @@ slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -556,24 +556,29 @@ class action_condition_by_movie(Action):
          first_different = True
          # condition_table is {'original_title': 'movies'}
          # condition_table is {'original_title': 'movies'}
+         child_key_df_dict = {}
          for condition in condition_table:
             # check if condition value is a list
-            child_key_df_dict = {}
+            
             if isinstance(condition_dict[condition], list):
                # TODO complete logic for dealing with conditions that are lists
                logging.warning("condition_dict is a list "+str(condition))
+               # df[df['A'].isin([3, 6])]
+               # df[df.name.str.contains('|'.join(search_values ))]
+               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains('&'.join(condition_dict[condition]))][child_key]
+               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
             else:
                # condition is not a list
                logging.warning("in multi table condition loop for not list condition "+str(condition))
                # build df that just contains child_keys for this
                child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][child_key]
                # len(DataFrame.index)
-               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index))) 
-               
+               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
          for condition in condition_table:
             # iteratively merge child key tables
             if first_different:
                logging.warning("got first different "+str(condition))
+               logging.warning("number of rows in child_key_df second loop "+str(len(child_key_df_dict[condition].index)))               
                result_child_merge = child_key_df_dict[condition]
                first_different = False
             else:
