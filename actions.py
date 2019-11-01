@@ -64,6 +64,7 @@ slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
 slot_map.update(dict.fromkeys(['cast','castmember','cast_name'], 'cast_name'))
 slot_map.update(dict.fromkeys(['crew','crewmember','crew_name'], 'crew_name'))
+slot_map.update(dict.fromkeys(['characters','character','character_name'], 'character'))
 slot_map.update(dict.fromkeys(['language','movies_language_name'], 'movies_language_name'))
 slot_map.update(dict.fromkeys(['genre','genre_name'], 'genre_name'))
 slot_map.update(dict.fromkeys(['keyword','keyword_name'], 'keyword_name'))
@@ -479,14 +480,148 @@ def same_table(condition_table, ranked_table):
       return(condition_table[0] == ranked_table[0])
    else:
       return(False)
+
+def prep_slot_dict(slot_dict):
+   for table in movie_schema:
+         logging.warning("table is: "+str(table))
+   for slot_entry in slot_dict:
+      logging.warning("in slot_entry loop slot_entry is: "+str(slot_entry))
+      logging.warning("in slot_entry loop slot_dict[slot_entry] is: "+str(slot_dict[slot_entry]))
+      if slot_entry in slot_condition_columns:
+         logging.warning("in slot_condition_columns for slot_entry: "+str(slot_entry))
+         # syntax to replace key value
+         # dictionary[new_key] = dictionary.pop(old_key)
+         slot_dict[slot_map[slot_entry]] = slot_dict.pop(slot_entry)
+         logging.warning("in slot_condition_columns new key set for "+str(slot_map[slot_entry]))
+      logging.warning("after "+str(slot_entry))
+   slot_dict["ranked_col"] = slot_map[slot_dict["ranked_col"]]
+   return(slot_dict)
+
+def get_results_same_table(result,condition_dict,condition_table,slot_dict):
+   logging.warning("same_table condition_table "+str(condition_table))
+   first_same = True
+   # iterate through conditions keeping all columns
+   for condition in condition_dict:
+      logging.warning("in single table condition loop for condition "+str(condition))
+      if first_same:
+         # first time through loop set base_df
+         base_df = df_dict[condition_table[condition]]
+         first_same = False
+      base_df = base_df[base_df[condition] == condition_dict[condition]]
+   result = base_df[slot_dict["ranked_col"]]
+   return(result)
+
+def get_result_diff_table(result,condition_dict,condition_table,slot_dict):
+   logging.warning("different condition_table"+str(condition_table)+" ranked_table "+str(ranked_table))
+   # TODO: eventually want to consider a class to replace all the various dictionaries
+   # but for now, just make the condition and ranked table containers dictionaries indexed by slot/column
+   # rather than lists
+   # condition and rank in different tables
+   first_different = True
+   child_key_df_dict = {}
+   for condition in condition_table:
+      # check if condition value is a list
+      if isinstance(condition_dict[condition], list):
+         #child_key_df_dict[condition] = build_condition_list_df(condition_dict[condition],condition
+         # TODO complete logic for dealing with conditions that are lists
+         logging.warning("condition_dict is a list "+str(condition))
+         sub_condition_df_dict = {}
+         # iterate through each element in the condition value list getting a df of matching child keys
+         for sub_condition in condition_dict[condition]:
+            logging.warning("sub_condition is "+str(sub_condition))
+            sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][child_key]
+            logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
+            logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
+         logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
+         # merge the child key dfs to get a single df containing the intersection of child keys
+         first_sub_condition = True
+         for sub_condition in sub_condition_df_dict:
+            logging.warning("sub_condition in merge loop is "+str(sub_condition))
+            if first_sub_condition:
+               first_sub_condition = False
+               child_key_df_dict[condition] = sub_condition_df_dict[sub_condition]
+            else:
+               child_key_df_dict[condition] = pd.merge(child_key_df_dict[condition],sub_condition_df_dict[sub_condition],on=child_key,how='inner')
+            logging.warning("sub_condition child_key_df_dict[condition] len is "+str(len(child_key_df_dict[condition])))
+         logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
+      else:
+         # condition is not a list
+         logging.warning("in multi table condition loop for not list condition "+str(condition))
+         # build df that just contains child_keys for this
+         child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][child_key]
+         logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
+   for condition in condition_table:
+      # iteratively merge child key tables
+      if first_different:
+         logging.warning("got first different "+str(condition))
+         logging.warning("number of rows in child_key_df second loop "+str(len(child_key_df_dict[condition].index)))               
+         result_child_merge = child_key_df_dict[condition]
+         first_different = False
+      else:
+         result_child_merge = pd.merge(result_child_merge,child_key_df_dict[condition],on=child_key,how='inner')
+   # now merge with parent table
+   logging.warning("number of rows in child_key_df "+str(len(result_child_merge.index)))
+   logging.warning("type of result_child_merge is "+str(type(type(result_child_merge))))
+   for item_c in result_child_merge:
+      logging.warning("item is "+str(item_c))
+   first_final = True
+   for condition in ranked_table:
+         # TODO need to find a way to get the ranked table if there are multiple ranked columns
+         logging.warning("in final ranked table loop for condition "+str(condition))
+         result[condition] = pd.merge(df_dict[ranked_table[condition]],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[condition]
+   
+   return(result)
     
+# refactored condition_by_cast using calls to power functions
+class action_condition_by_cast(Action):
+   """return the values scoped by cast"""
+   def name(self) -> Text:
+      return "action_condition_by_cast"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      # get dictionary of slot values
+      slot_dict = tracker.current_slot_values()
+      # make required mappings of slot names and slot values
+      slot_dict = prep_slot_dict(slot_dict)
+      condition_dict = {}
+      condition_dict = get_condition_columns(slot_dict)
+      # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
+      condition_table = get_table(list(condition_dict.keys()),movie_schema)
+      # TODO change ranked_col slot to a list in rasa, to match condition
+      ranked_table = get_table([slot_dict["ranked_col"]],movie_schema)      
+      logging.warning("condition_dict is "+str(condition_dict))
+      logging.warning("condition_table is "+str(condition_table))
+      logging.warning("ranked_cod is "+str(slot_dict["ranked_col"]))
+      logging.warning("ranked_table is "+str(ranked_table))
+      result = {}
+      if same_table(list(condition_table.values()),list(ranked_table.values())):
+         result = get_results_same_table(result,condition_dict,condition_table,slot_dict)
+      else:
+         result = get_result_diff_table(result,condition_dict,condition_table,slot_dict)
+      # output results
+      logging.warning("number of rows in result "+str(len(result))) 
+      for result_item in result:
+         logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
+         logging.warning("in output loop ")
+         for nested_item in result[result_item]:
+            logging.warning(str(nested_item))
+            dispatcher.utter_message(str(nested_item))
+      logging.warning("COMMENT: end of transmission")
+      dispatcher.utter_message("COMMENT: end of transmission validated")
+      return []
+
+
+
 # new condition_by_movie class:
 #     - JSON columns processed in separate dataframes rather than native
 #     - code generalized to handle a wide variety of queries
 # TO DO: SWITCH TO condition_by_movie to test an "all the same table" query
 
+
+
+
+
 class action_condition_by_movie(Action):
-   """return the values scoped by cast"""
+   """return the values from movie table"""
    def name(self) -> Text:
       return "action_condition_by_movie"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
@@ -539,15 +674,20 @@ class action_condition_by_movie(Action):
          # iterate through conditions keeping all columns
          for condition in condition_dict:
             logging.warning("in single table condition loop for condition "+str(condition))
+            logging.warning("in single table condition loop for condition_table[condition] "+str(condition_table[condition]))
             if first_same:
                # first time through loop set base_df
                base_df = df_dict[condition_table[condition]]
                first_same = False
-            base_df = base_df[base_df[condition] == condition_dict[condition]]
+            logging.warning("in single table condition loop for condition_dict[condition] "+str(condition_dict[condition]))
+            # TODO: need to handle list of conditions properly - currently OR for a list
+            if isinstance(condition_dict[condition], list):
+               base_df = base_df[base_df[condition].isin(condition_dict[condition])]
+            else:
+               base_df = base_df[base_df[condition] == str(condition_dict[condition])]
          result = base_df[slot_dict["ranked_col"]]
       else:
          logging.warning("different condition_table"+str(condition_table)+" ranked_table "+str(ranked_table))
-         # TODO: start with a single condition_table and a single ranked_table
          # TODO: eventually want to consider a class to replace all the various dictionaries
          # but for now, just make the condition and ranked table containers dictionaries indexed by slot/column
          # rather than lists
@@ -623,11 +763,15 @@ class action_condition_by_movie(Action):
       logging.warning("number of rows in result "+str(len(result))) 
           
       for result_item in result:
-         logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
+         #logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
          logging.warning("in output loop ")
-         for nested_item in result[result_item]:
-            logging.warning(str(nested_item))
-            dispatcher.utter_message(str(nested_item))
+         if isinstance(result_item, str):
+            logging.warning(str(result_item))
+            dispatcher.utter_message(str(result_item))
+         else:
+            for nested_item in result[result_item]:
+               logging.warning(str(nested_item))
+               dispatcher.utter_message(str(nested_item))
          #logging.warning("result for re "+str(slot_dict["ranked_col"])+" is "+str(result_item)+ str(result[result_item]))
          #dispatcher.utter_message("result for condition "+str(slot_dict["ranked_col"])+" is "+str(result[result_item]))
       '''                   
