@@ -13,6 +13,9 @@ import ast
 import json
 import logging
 import itertools
+import numbers
+import decimal
+
 # TODO figure out that even after setting logging level to debug, debug logging doesn't appear in the output
 # for now, just keep warning messages for basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -765,7 +768,8 @@ class action_condition_by_movie(Action):
       for result_item in result:
          #logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
          logging.warning("in output loop ")
-         if isinstance(result_item, str):
+         # if result_item is unitary, just print it. If not, iterate through it
+         if isinstance(result_item, str) or isinstance(result_item, numbers.Number):
             logging.warning(str(result_item))
             dispatcher.utter_message(str(result_item))
          else:
