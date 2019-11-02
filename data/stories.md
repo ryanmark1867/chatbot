@@ -16,10 +16,20 @@
 ## New Story
 * greet
     - utter_what_next
-* condition_by_cast{"ranked_col":"movies","cast_name":"Jack Lemmon"}
+* condition_by_movie{"ranked_col":"movies","cast_name":"Jack Lemmon"}
     - slot{"ranked_col":"movies"}
     - slot{"cast_name":"Jack Lemmon"}
-    - action_condition_by_cast
+    - action_condition_by_movie
+
+
+# New Story
+* greet
+    - utter_what_next
+* condition_by_movie{"ranked_col":"characters","cast_name":"Tom Hanks"}
+    - slot{"ranked_col":"characters"}
+    - slot{"cast_name":"Tom Hanks"}
+    - action_condition_by_movie
+
 
 ## say goodbye
 * goodbye

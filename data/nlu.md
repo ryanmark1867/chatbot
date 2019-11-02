@@ -6,6 +6,15 @@
 - correct
 
 ## intent:condition_by_cast
+
+
+## intent:condition_by_keyword
+
+
+
+## intent:condition_by_movie
+- [characters](ranked_col) played by [Tom Hanks](cast_name)
+- [characters](ranked_col) with [movies](ranked_col) played by [Tom Hanks](cast_name)
 - list [movies](ranked_col) with [Marilyn Monroe](cast_name)
 - list [movies](ranked_col) with [Jack Lemmon](cast_name)
 - list [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
@@ -14,12 +23,8 @@
 - [movies](ranked_col) with [Marilyn Monroe](cast_name) and [Jack Lemmon](cast_name)
 - [characters](ranked_col) played by [Tom Hanks](cast_name)
 - what are the [characters](ranked_col) played by [Tom Hanks](cast_name)
-
-## intent:condition_by_keyword
-
-
-
-## intent:condition_by_movie
+- list [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
+- [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
 - list [movies](ranked_col) about [midlife crisis](keyword)
 - list [movies](ranked_col) about [murder](keyword)
 - list [murder](keyword) [movies](ranked_col)
@@ -27,6 +32,7 @@
 - list [midlife crisis](keyword) [movies](ranked_col)
 - list [movies](ranked_col) about [usa president](keyword]
 - list [funny](genre) [vampire](keyword) [movies](ranked_col)
+- list [Comedy](genre) [vampire](keyword) [movies](ranked_col)
 - [funny](genre) [movies](ranked_col) about [vampires](keyword)
 - [funny](genre) [vampire](keyword) [movies](ranked_col)
 - what is the [plot](ranked_col) for [Taxi Driver](movie)
@@ -46,7 +52,8 @@
 - what [year](ranked_col) did [Taxi Driver](movie) come out
 - what [year](ranked_col) did [Braveheart](movie) come out
 - what was the [budget](ranked_col) for [Goldfinger](movie)
-- what was the [budget](ranked_col) for [GoldenEye](movie)
+- what was the [budget](ranked_col) for [GoldenEye](movie
+- what was the [budget](ranked_col) and [revenue](ranked_col) for [GoldenEye](movie)
 - what was the [budget](ranked_col) for [Taxi Driver](movie)
 - what was the [budget](ranked_col) for [Jaws](movie)
 - what was the [budget](ranked_col) for [The Exorcist](movie)
