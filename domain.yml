@@ -86,7 +86,7 @@ slots:
   plot:
     type: text
   ranked_col:
-    type: text
+    type: list
   revenue:
     type: text
   row_number:
