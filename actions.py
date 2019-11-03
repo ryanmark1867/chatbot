@@ -72,6 +72,7 @@ slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
 slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
+slot_map.update(dict.fromkeys(['director','Director'],'Director'))
 slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
 slot_map.update(dict.fromkeys(['cast','castmember','cast_name'], 'cast_name'))
@@ -86,7 +87,7 @@ slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -159,6 +160,7 @@ def load_schema_dict(df_dict):
    for file in df_dict:
       schema_dict[file] = list(df_dict[file])
       logging.warning("schema_dict for "+file+" is "+str(schema_dict[file]))
+      logging.warning("size of df for "+file+" is "+str(len(df_dict[file].index)))
    return(schema_dict)
 
 '''
@@ -188,6 +190,23 @@ df_dict['keywords_keywords'].rename({'name':'keyword_name'},axis=1,inplace=True)
 # generate separate 'year' column from 'release_date'
 df_dict['movies']['year'] = df_dict['movies']['release_date'].str[:4]
 
+# define distinct dataframes for each profession in the credits_crew df
+def create_crew_by_job_dfs(credits_df,df_dict):
+   ''' create distinct tables for each job in credits_crew '''
+   # df.name.unique()
+   job_list = credits_df.job.unique()
+   logging.warning("job list"+str(job_list))
+   for job_name in job_list:
+      # for each unique job, create
+      job_name_uscore = job_name.replace(" ","_")
+      new_handle = "credits_crew_"+job_name_uscore
+      logging.warning("job new handle "+str(new_handle))
+      df_dict[new_handle] = credits_df[credits_df['job'] == job_name]
+      df_dict[new_handle].rename({'crew_name':job_name_uscore},axis=1,inplace=True)
+          
+   return(df_dict)
+
+
 # define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
 # credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
 parent_key = 'id'
@@ -196,6 +215,7 @@ parent_table = 'movies'
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 # main prep code block
+df_dict = create_crew_by_job_dfs(df_dict['credits_crew'],df_dict)
 movie_schema = load_schema_dict(df_dict)
 
 # classes for individual custom actions triggered by Rasa
@@ -425,9 +445,9 @@ def get_table(column_list,schema):
    """ return the table that contains the given column in the given schema dictionary"""
    table_dict = {}
    for table in schema:
-      logging.warning("get_table table is: "+str(table))
+      #logging.warning("get_table table is: "+str(table))
       for column in column_list:
-         logging.warning("get_table column is: "+str(column))
+         #logging.warning("get_table column is: "+str(column))
          if column in schema[table]:
             logging.warning("get_table got table "+str(table)+" for column: "+str(column))
             table_dict[column] = table
@@ -602,8 +622,9 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
    condition_table: name of the table that corresponds with the condition that is being applied: e.g. 'movies', 'credits_cast' '''
    # list(mydict.keys())[list(mydict.values()).index(16)]
    column_list = [child_key]
-   # reverse lookup the key in ranked_table that corresponds with the value condition_table and append to column_list
-   column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
+   if condition_table in ranked_table.values():
+      # reverse lookup the key in ranked_table that corresponds with the value condition_table and append to column_list
+      column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
    return(column_list)
    
 
