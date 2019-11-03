@@ -14,6 +14,7 @@
 
 ## intent:condition_by_movie
 - [characters](ranked_col) played by [Tom Hanks](cast_name)
+- [characters](ranked_col) and [movies](ranked_col) played by [Tom Hanks](cast_name)
 - [characters](ranked_col) with [movies](ranked_col) played by [Tom Hanks](cast_name)
 - list [movies](ranked_col) with [Marilyn Monroe](cast_name)
 - list [movies](ranked_col) with [Jack Lemmon](cast_name)
