@@ -21,6 +21,13 @@
     - slot{"cast_name":"Jack Lemmon"}
     - action_condition_by_movie
 
+## New Story
+* greet
+    - utter_what_next
+* condition_by_movie{"ranked_col":"movies","director":"Woody Allen"}
+    - slot{"ranked_col":"movies"}
+    - slot{"director":"Woody Allen"}
+    - action_condition_by_movie
 
 # New Story
 * greet
