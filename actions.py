@@ -192,6 +192,8 @@ df_dict['movies']['year'] = df_dict['movies']['release_date'].str[:4]
 # credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
 parent_key = 'id'
 child_key = 'movie_id'
+parent_table = 'movies'
+child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 # main prep code block
 movie_schema = load_schema_dict(df_dict)
@@ -593,6 +595,18 @@ def get_selection_column_list(condition_table_list,ranked_table_list):
    ''' get list of columns to pull in final result'''
    return()
 
+def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
+   ''' return the ranked columns that are in the condition_table
+   child_key: column that is always pulled from condition_table for use to join with main table
+   ranked_table: dictionary of form  {'original_title': 'movies', 'character': 'credits_cast'}
+   condition_table: name of the table that corresponds with the condition that is being applied: e.g. 'movies', 'credits_cast' '''
+   # list(mydict.keys())[list(mydict.values()).index(16)]
+   column_list = [child_key]
+   # reverse lookup the key in ranked_table that corresponds with the value condition_table and append to column_list
+   column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
+   return(column_list)
+   
+
 # new condition_by_movie class:
 #     - JSON columns processed in separate dataframes rather than native
 #     - code generalized to handle a wide variety of queries
@@ -618,7 +632,6 @@ class action_condition_by_movie(Action):
       # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
       logging.warning("ABOUT TO GET CONDITION TABLE ")
       condition_table = get_table(list(condition_dict.keys()),movie_schema)
-      # TODO change ranked_col slot to a list in rasa, to match condition
       logging.warning("ABOUT TO GET RANKED TABLE ")
       ranked_table = get_table(slot_dict["ranked_col"],movie_schema)
       logging.warning("condition_dict is "+str(condition_dict))
@@ -658,6 +671,8 @@ class action_condition_by_movie(Action):
          child_key_df_dict = {}
          for condition in condition_table:
             # check if condition value is a list
+            # for this condition, build the list of columns to pull from the child table
+            condition_columns_to_pull = get_condition_columns_to_pull(child_key, ranked_table, condition_table[condition])
             if isinstance(condition_dict[condition], list):
                # TODO complete logic for dealing with conditions that are lists
                logging.warning("condition_dict is a list "+str(condition))
@@ -665,7 +680,7 @@ class action_condition_by_movie(Action):
                # iterate through each element in the condition value list getting a df of matching child keys
                for sub_condition in condition_dict[condition]:
                   logging.warning("sub_condition is "+str(sub_condition))
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][child_key]
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
                   logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
                   logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
                logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
@@ -684,7 +699,7 @@ class action_condition_by_movie(Action):
                # condition is not a list
                logging.warning("in multi table condition loop for not list condition "+str(condition))
                # build df that just contains child_keys for this
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][child_key]
+               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
                logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
          for condition in condition_table:
             # iteratively merge child key tables
@@ -701,22 +716,35 @@ class action_condition_by_movie(Action):
          for item_c in result_child_merge:
             logging.warning("item is "+str(item_c))
          first_final = True
-         for condition in ranked_table:
-             # TODO need to find a way to get the ranked table if there are multiple ranked columns
-             logging.warning("in final ranked table loop for condition "+str(condition))
-             result[condition] = pd.merge(df_dict[ranked_table[condition]],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[condition]
-      logging.warning("number of rows in result "+str(len(result))) 
-      # output result    
+         # TODO need to get table from among ranked_tables that has to be merged
+         result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[slot_dict["ranked_col"]]
+      logging.warning("number of rows in result "+str(len(result)))
+      # TODO NEED TO FIX DISPLAY OF MULTI ENTRY OUTPUT - CURRENTLY GLITCHY
+      # output result
+      # for index, row in df.iterrows():
+      logging.warning("result is "+str(result))
+      for index, row in result.iterrows():
+         logging.warning(str(result.loc[[index]]))
+         dispatcher.utter_message(str(result.loc[[index]]))
+
+      
+
+      '''
       for result_item in result:
          logging.warning("in output loop ")
          # if result_item is unitary, just print it. If not, iterate through it
-         if isinstance(result_item, str) or isinstance(result_item, numbers.Number):
+         if isinstance(result[result_item], str) or isinstance(result[result_item], numbers.Number):
+            logging.warning("UNITARY ")
             logging.warning(str(result[result_item]))
             dispatcher.utter_message(str(result[result_item]))
          else:
+            logging.warning("NESTED ")
+            output_string = ''
             for nested_item in result[result_item]:
-               logging.warning(str(nested_item))
-               dispatcher.utter_message(str(nested_item))
+               output_string = output_string+nested_item+' '
+            logging.warning(str(output_string))
+            dispatcher.utter_message(str(output_string))
+      '''
       logging.warning("COMMENT: end of transmission")
       dispatcher.utter_message("COMMENT: end of transmission validated")
       return []
