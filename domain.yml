@@ -33,14 +33,18 @@ entities:
 slots:
   ascending_descending:
     type: categorical
-    initial_value: ascending
+    initial_value: descending
     values:
     - ascending
     - descending
   budget:
     type: text
+  rank_axis:
+    type: text
   cast_name:
     type: list
+  director:
+    type: text
   character:
     type: text
   condition_col:
