@@ -11,6 +11,7 @@ intents:
 - get_first_n_rows
 - condition_by_year
 - condition_by_movie
+- condition_by_movie_ordered
 - condition_by_language
 - condition_by_keyword
 - condition_by_cast
@@ -30,6 +31,8 @@ entities:
 - genre
 - cast_name
 - character
+- director
+- rank_axis
 slots:
   ascending_descending:
     type: categorical
@@ -39,12 +42,8 @@ slots:
     - descending
   budget:
     type: text
-  rank_axis:
-    type: text
   cast_name:
     type: list
-  director:
-    type: text
   character:
     type: text
   condition_col:
@@ -58,6 +57,8 @@ slots:
     - greater than
   condition_val:
     type: list
+  director:
+    type: text
   file_name:
     type: text
   genre:
@@ -88,6 +89,8 @@ slots:
   original_language:
     type: text
   plot:
+    type: text
+  rank_axis:
     type: text
   ranked_col:
     type: list
@@ -142,5 +145,6 @@ actions:
 - action_first_n_rows
 - action_condition_by_year
 - action_condition_by_movie
+- action_condition_by_movie_ordered
 - action_condition_by_keyword
 - action_condition_by_cast
