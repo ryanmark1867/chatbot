@@ -10,10 +10,11 @@
 
 ## intent:condition_by_keyword
 
+## intent:condition_by_movie_ordered
+- rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
 
 
 ## intent:condition_by_movie 
-- rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
 - list [movies](ranked_col) directed by [Woody Allen](director)
 - [characters](ranked_col) played by [Tom Hanks](cast_name)
 - [characters](ranked_col) and [movies](ranked_col) played by [Tom Hanks](cast_name)

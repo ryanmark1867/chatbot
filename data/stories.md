@@ -24,6 +24,16 @@
 ## New Story
 * greet
     - utter_what_next
+* condition_by_movie_ordered{"ranked_col":"movies","director":"Woody Allen","rank_axis":"popularity"}
+    - slot{"ranked_col":"movies"}
+    - slot{"director":"Woody Allen"}
+	- slot{"rank_axis":"popularity"}
+    - action_condition_by_movie_ordered
+
+
+## New Story
+* greet
+    - utter_what_next
 * condition_by_movie{"ranked_col":"movies","director":"Woody Allen"}
     - slot{"ranked_col":"movies"}
     - slot{"director":"Woody Allen"}
