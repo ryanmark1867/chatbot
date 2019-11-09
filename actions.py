@@ -47,6 +47,7 @@ path_dict['movies'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/ma
 path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/ratings_small.csv'
 path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
 path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
+image_path = 'https://image.tmdb.org/t/p/w500'
 
 # placeholders used to clean up files with missing JSON values so that they can have literal_eval processing done on them
 crew_placeholder = str([{'credit_id': '52fe4ab0c3a368484e161d3d', 'department': 'Directing', 'gender': 0, 'id': 1080311, 'job': 'Director', 'name': 'Sandip Ray', 'profile_path': None}])
@@ -217,6 +218,12 @@ child_tables = ['links','ratings','keywords','movies_genres','movies_production_
 # main prep code block
 df_dict = create_crew_by_job_dfs(df_dict['credits_crew'],df_dict)
 movie_schema = load_schema_dict(df_dict)
+
+def get_image_path(image_file):
+   # TODO replace with code that gets the actual base path
+   return(image_path+image_file)
+
+
 
 # classes for individual custom actions triggered by Rasa
       
@@ -905,7 +912,17 @@ class action_condition_by_movie(Action):
       ranked_cod is budget
       ranked_table is ['movies']
       '''
-   
+      
+class action_condition_by_media(Action):
+   """return the values from movie table"""
+   def name(self) -> Text:
+      return "action_condition_by_media"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      image = "https://image.tmdb.org/t/p/w500/rhIRbceoE9lR4veEXuwCC2wARtG.jpg"
+      dispatcher.utter_message("COMMENT: before end of transmission validated")
+      dispatcher.utter_attachment(image)
+      dispatcher.utter_message("COMMENT: end of transmission validated")
+      return []
 
 class action_condition_by_language(Action):
    """return the values scoped by year"""

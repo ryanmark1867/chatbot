@@ -12,6 +12,7 @@ intents:
 - condition_by_year
 - condition_by_movie
 - condition_by_movie_ordered
+- condition_by_media
 - condition_by_language
 - condition_by_keyword
 - condition_by_cast
@@ -33,6 +34,7 @@ entities:
 - character
 - director
 - rank_axis
+- media
 slots:
   ascending_descending:
     type: categorical
@@ -84,6 +86,8 @@ slots:
     - swedish
     - czech
     - romanian
+  media:
+    type: text
   movie:
     type: text
   original_language:
@@ -145,6 +149,7 @@ actions:
 - action_first_n_rows
 - action_condition_by_year
 - action_condition_by_movie
+- action_condition_by_media
 - action_condition_by_movie_ordered
 - action_condition_by_keyword
 - action_condition_by_cast
