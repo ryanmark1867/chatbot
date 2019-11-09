@@ -10,3 +10,5 @@ Main directory contains standard Rasa files:
 data subdirectory contains standard Rasa files:
 - stories.md
 - nlu.md
+
+Nov. 9: updates to level just prior to FM-related changes
