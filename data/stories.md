@@ -21,6 +21,17 @@
     - slot{"cast_name":"Jack Lemmon"}
     - action_condition_by_movie
 
+
+## New Story
+* greet
+    - utter_what_next
+* condition_by_media{"media":"poster","movie":"Harry Meet Sally"}
+    - slot{"media":"poster"}
+    - slot{"movie":"Harry Meet Sally"}
+    - action_condition_by_media
+
+
+
 ## New Story
 * greet
     - utter_what_next

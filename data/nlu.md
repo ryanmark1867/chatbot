@@ -10,6 +10,9 @@
 
 ## intent:condition_by_keyword
 
+## intent:condition_by_media
+- Show [poster](media) for [Harry Meet Sally](movie)
+
 ## intent:condition_by_movie_ordered
 - rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
 
