@@ -5,9 +5,13 @@
 # common imports
 
 from rasa_sdk import Action, Tracker
+#from rasa_sdk import Tracker
+#from rasa_core.actions.action import Action
 from rasa_sdk.events import SlotSet
 from typing import Any, Text, Dict, List
-from rasa_sdk.executor import CollectingDispatcher
+#from rasa_sdk.executor import CollectingDispatcher
+from rasa_core_sdk.executor import CollectingDispatcher
+from rasa_sdk.events import SlotSet
 import pandas as pd
 import ast
 import json
@@ -351,7 +355,8 @@ class action_condition_by_year(Action):
          if i >= limiter:
             break
       dispatcher.utter_message("COMMENT: end of transmission")
-      return []
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+
 
         
 # version used for condition_by_cast
@@ -485,8 +490,6 @@ def same_table(condition_table, ranked_table):
 
 def prep_slot_dict(slot_dict):
    ''' iterate through slot dictionary mapping slot keys and values from Rasa settings to what's required for schema '''
-   for table in movie_schema: 
-         logging.warning("table is: "+str(table))
    for slot_entry in slot_dict:
       logging.warning("in slot_entry loop slot_entry is: "+str(slot_entry))
       logging.warning("in slot_entry loop slot_dict[slot_entry] is: "+str(slot_dict[slot_entry]))
@@ -633,6 +636,17 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
       # reverse lookup the key in ranked_table that corresponds with the value condition_table and append to column_list
       column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
    return(column_list)
+
+def clear_out_slots(persistance_flag,slot_structure):
+   logging.warning("clearing out for persistance_flag "+str(persistance_flag))
+   if persistance_flag != "True":
+      # clear out structure
+      for slot in slot_structure:
+         logging.warning("about to set to None "+str(slot))
+         SlotSet(slot, None)
+         SlotSet("persistance","False")
+   return()
+      
    
 def generate_result(slot_dict,condition_dict,condition_table,ranked_table):
    result = {}
@@ -715,7 +729,8 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table):
       logging.warning("parent_key is "+str(parent_key))
       result_col_list = slot_dict["ranked_col"]
       result_col_list.append(parent_key)
-      result_col_list.append(slot_dict["rank_axis"])
+      if slot_dict["rank_axis"] != None:
+         result_col_list.append(slot_dict["rank_axis"])
       logging.warning("result_col_list is "+str(result_col_list))
       result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[result_col_list]
       logging.warning("about to leave generate_result")
@@ -769,9 +784,11 @@ class action_condition_by_movie_ordered(Action):
       for index, row in result.iterrows():
          logging.warning(str(result.loc[[index]]))
          dispatcher.utter_message(str(result.loc[[index]]))
-      logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission validated")
-      return []
+      logging.warning("COMMENT: end of transmission FM")
+      
+      dispatcher.utter_message("COMMENT: end of transmission validated FM")
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+
 
 
 # new condition_by_movie class:
@@ -790,8 +807,6 @@ class action_condition_by_movie(Action):
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       # get dictionary of slot values
       slot_dict = tracker.current_slot_values()
-      for table in movie_schema:
-         logging.warning("table is: "+str(table))
       # apply mappings in slot_dict from Rasa to table schema
       slot_dict = prep_slot_dict(slot_dict)
       condition_dict = {}
@@ -805,6 +820,9 @@ class action_condition_by_movie(Action):
       logging.warning("condition_table is "+str(condition_table))
       logging.warning("ranked_cod is "+str(slot_dict["ranked_col"]))
       logging.warning("ranked_table is "+str(ranked_table))
+      result = generate_result(slot_dict,condition_dict,condition_table,ranked_table)
+
+      '''
       # result = generate_result(slot_dict,condition_dict,condition_table,ranked_table)
       # TODO lowercase strings for comparison
       result = {}
@@ -885,6 +903,7 @@ class action_condition_by_movie(Action):
          first_final = True
          # TODO need to get table from among ranked_tables that has to be merged
          result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[slot_dict["ranked_col"]]
+      '''
       logging.warning("number of rows in result "+str(len(result)))
       # TODO NEED TO FIX DISPLAY OF MULTI ENTRY OUTPUT - CURRENTLY GLITCHY
       # output result
@@ -896,8 +915,19 @@ class action_condition_by_movie(Action):
 
       
       logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission validated")
-      return []
+      
+      dispatcher.utter_message("COMMENT: end of transmission validated FM")
+      # TODO more elegant way to clear out used slots
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+
+class action_clear_slots(Action):
+   """debug action from active chat to flush slots after failed query - otherwise bad slot values hang around and mess up subsequent queries"""
+   def name(self) -> Text:
+      return "action_clear_slots"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+
 
       '''
       EXAMPLE OF CONDITION LIST
@@ -918,11 +948,38 @@ class action_condition_by_media(Action):
    def name(self) -> Text:
       return "action_condition_by_media"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      image = "https://image.tmdb.org/t/p/w500/rhIRbceoE9lR4veEXuwCC2wARtG.jpg"
-      dispatcher.utter_message("COMMENT: before end of transmission validated")
-      dispatcher.utter_attachment(image)
+      slot_dict = tracker.current_slot_values()
+      # TODO generalize this code to deal with media in general - some kind of metadata in schema to identify media-related columns
+      # and code to find media file names and paths and render per media type
+      logging.warning("slot_dict['movie'] is "+str(slot_dict['movie']))
+      poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.contains(slot_dict['movie'])]['poster_path']
+      logging.warning("poster_file is "+str(poster_file.iloc[0]))
+      img = image_path+str(poster_file.iloc[0])
+      logging.warning("img is "+str(img))
+      logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel()))
+      if tracker.get_latest_input_channel() == 'facebook':
+         
+         message = {
+            "attachment": {
+               "type": "image",
+               "payload": {
+                  "url": img,
+                  "is_reusable": False
+               }
+            }
+         }
+         logging.warning("about to utter_custom_json for "+str(tracker.get_latest_input_channel()))
+         dispatcher.utter_custom_json(message)
+      else:
+         dispatcher.utter_message(img)
+      '''
+      logging.warning("about to try take 2")
+      dispatcher.utter_template("utter_video", tracker, False, image = "https://my.image.com/image.png")
+      '''
       dispatcher.utter_message("COMMENT: end of transmission validated")
-      return []
+      # 5.	return [SlotSet("account_type", data["account_type"])]
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+
 
 class action_condition_by_language(Action):
    """return the values scoped by year"""
