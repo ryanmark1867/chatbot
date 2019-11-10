@@ -16,6 +16,7 @@ intents:
 - condition_by_language
 - condition_by_keyword
 - condition_by_cast
+- clear_slots
 entities:
 - file_name
 - row_number
@@ -100,6 +101,9 @@ slots:
     type: list
   revenue:
     type: text
+  persistance:
+    type: text
+    initial_value: False    
   row_number:
     type: text
     initial_value: 5
@@ -153,3 +157,4 @@ actions:
 - action_condition_by_movie_ordered
 - action_condition_by_keyword
 - action_condition_by_cast
+- action_clear_slots
