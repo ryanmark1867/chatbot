@@ -5,13 +5,18 @@
 - that sounds good
 - correct
 
+
+## intent: clear_slots
+- CLEAR SLOTS
+- clear slots
+
 ## intent:condition_by_cast
 
 
 ## intent:condition_by_keyword
 
 ## intent:condition_by_media
-- Show [poster](media) for [Harry Meet Sally](movie)
+- Show [poster](media) for [When Harry Met Sally](movie)
 
 ## intent:condition_by_movie_ordered
 - rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
@@ -25,8 +30,11 @@
 - list [movies](ranked_col) with [Marilyn Monroe](cast_name)
 - list [movies](ranked_col) with [Jack Lemmon](cast_name)
 - list [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
+- [movies](ranked_col) starring [Clooney](cast_name)
+- [movies](ranked_col) starring [George Clooney](cast_name)
 - [movies](ranked_col) with [Pacino](cast_name) and [De Niro](cast_name)
 - list [movies](ranked_col) with [Marilyn Monroe](cast_name) and [Jack Lemmon](cast_name)
+- list [movies](ranked_col) with [Monroe](cast_name) and [Lemmon](cast_name)
 - [movies](ranked_col) with [Marilyn Monroe](cast_name) and [Jack Lemmon](cast_name)
 - [characters](ranked_col) played by [Tom Hanks](cast_name)
 - what are the [characters](ranked_col) played by [Tom Hanks](cast_name)
@@ -44,8 +52,9 @@
 - [funny](genre) [vampire](keyword) [movies](ranked_col)
 - what is the [plot](ranked_col) for [Taxi Driver](movie)
 - [plot](ranked_col) for [Taxi Driver](movie)
+- [plot](ranked_col) line for [Taxi Driver](movie)
 - what is the [plot](ranked_col) for [Toy Story](movie)
-- plot](ranked_col) for [Toy Story](movie)
+- [plot](ranked_col) for [Toy Story](movie)
 - what is the [plot](ranked_col) for [GoldenEye](movie)
 - show me the [plot](ranked_col) for [The Exorcist](movie)
 - what's the [plot](ranked_col) of [Braveheart](movie)
