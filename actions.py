@@ -71,7 +71,7 @@ json_dict['keywords'] = ['keywords']
 slot_map = dict.fromkeys(['movies','movie name','movie','title','original_title'],'original_title')
 slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview'],'overview'))
 slot_map.update(dict.fromkeys(['release date','release_date'],'release_date'))
-slot_map.update(dict.fromkeys(['year'],'year'))
+slot_map.update(dict.fromkeys(['year','when'],'year'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
 slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
@@ -81,7 +81,7 @@ slot_map.update(dict.fromkeys(['director','Director'],'Director'))
 slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
 # slot_map.update(dict.fromkeys(['popularity','rating'],'rating'))
-slot_map.update(dict.fromkeys(['cast','castmember','cast_name'], 'cast_name'))
+slot_map.update(dict.fromkeys(['cast','castmember','cast_name','actor','actors','actress','actresses'], 'cast_name'))
 slot_map.update(dict.fromkeys(['crew','crewmember','crew_name'], 'crew_name'))
 slot_map.update(dict.fromkeys(['characters','character','character_name'], 'character'))
 slot_map.update(dict.fromkeys(['language','movies_language_name'], 'movies_language_name'))
@@ -93,7 +93,7 @@ slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","character","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -591,6 +591,7 @@ class action_condition_by_cast(Action):
       return "action_condition_by_cast"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       # get dictionary of slot values
+      slot_dict = {}
       slot_dict = tracker.current_slot_values()
       # make required mappings of slot names and slot values
       slot_dict = prep_slot_dict(slot_dict)
@@ -646,7 +647,20 @@ def clear_out_slots(persistance_flag,slot_structure):
          SlotSet(slot, None)
          SlotSet("persistance","False")
    return()
-      
+
+def output_result(dispatcher,result):
+   ''' common output to bot interface and logger '''
+   for index, row in result.iterrows():
+      str_row = ""
+      str_row_log = ""
+      for col in result.columns:
+         # don't output ID columns for final bot rendering
+         if (col != parent_key and col != child_key):
+            str_row = str_row+" "+str(row[col])+"\t"
+         str_row_log = str_row_log+" "+str(row[col])+"\t"
+      logging.warning(str_row_log)
+      dispatcher.utter_message(str_row)
+   return()
    
 def generate_result(slot_dict,condition_dict,condition_table,ranked_table):
    result = {}
@@ -666,7 +680,9 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table):
          if isinstance(condition_dict[condition], list):
             base_df = base_df[base_df[condition].isin(condition_dict[condition])]
          else:
-            base_df = base_df[base_df[condition] == str(condition_dict[condition])]
+            #base_df = base_df[base_df[condition] == str(condition_dict[condition])]
+            
+            base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
       logging.warning("RESULT IS "+str(base_df[slot_dict["ranked_col"]]))
       result = base_df[slot_dict["ranked_col"]]
    else:
@@ -737,11 +753,13 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table):
    return(result)
 
 class action_condition_by_movie_ordered(Action):
-   """return the values from movie table"""
+   """return the values from one or more tables and order output results"""
    def name(self) -> Text:
       return "action_condition_by_movie_ordered"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      logging.warning("IN CONDITION BY MOVIE ORDERED")
       # get dictionary of slot values
+      slot_dict = {}
       slot_dict = tracker.current_slot_values()
       # apply mappings in slot_dict from Rasa to table schema
       slot_dict = prep_slot_dict(slot_dict)
@@ -765,28 +783,15 @@ class action_condition_by_movie_ordered(Action):
       logging.warning("past result_pre_sort")
       logging.warning(" result_pre_sort type"+str(type(result_pre_sort)))
       logging.warning(" df_dict[sort_table] type"+str(type(df_dict[sort_table[slot_dict["rank_axis"]]])))
-      '''
-      # join result table with sort table - TODO CHECK IF THIS HAS TO BE PUT BACK AGAIN OR SAFE TO INCLUDE RANK_AXIS ALL THE TIME
-      if sort_table[slot_dict["rank_axis"]] == parent_table:
-         right_key = parent_key
-      else:
-         right_key = child_key
-      logging.warning(" result_pre_sort "+str(result_pre_sort))
-      result_pre_sort = pd.merge(result_pre_sort,df_dict[sort_table[slot_dict["rank_axis"]]],left_on=parent_key,right_on=right_key,how='inner')
-      logging.warning(" result_pre_sort "+str(result_pre_sort))
-      '''
       # check the direction of sort
       if slot_dict["ascending_descending"] == "ascending":
          sort_direction_ascending = True
       else:
          sort_direction_ascending = False
       result = result_pre_sort.sort_values(by = [slot_dict["rank_axis"]],ascending=sort_direction_ascending)[slot_dict["ranked_col"]]
-      for index, row in result.iterrows():
-         logging.warning(str(result.loc[[index]]))
-         dispatcher.utter_message(str(result.loc[[index]]))
+      output_result(dispatcher,result)
       logging.warning("COMMENT: end of transmission FM")
       
-      dispatcher.utter_message("COMMENT: end of transmission validated FM")
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 
@@ -794,18 +799,16 @@ class action_condition_by_movie_ordered(Action):
 # new condition_by_movie class:
 #     - JSON columns processed in separate dataframes rather than native
 #     - code generalized to handle a wide variety of queries
-# TO DO: SWITCH TO condition_by_movie to test an "all the same table" query
-
-
-
 
 
 class action_condition_by_movie(Action):
-   """return the values from movie table"""
+   """return the values from one or more tables"""
    def name(self) -> Text:
       return "action_condition_by_movie"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      logging.warning("IN CONDITION BY MOVIE")
       # get dictionary of slot values
+      slot_dict = {}
       slot_dict = tracker.current_slot_values()
       # apply mappings in slot_dict from Rasa to table schema
       slot_dict = prep_slot_dict(slot_dict)
@@ -820,103 +823,16 @@ class action_condition_by_movie(Action):
       logging.warning("condition_table is "+str(condition_table))
       logging.warning("ranked_cod is "+str(slot_dict["ranked_col"]))
       logging.warning("ranked_table is "+str(ranked_table))
-      result = generate_result(slot_dict,condition_dict,condition_table,ranked_table)
-
-      '''
-      # result = generate_result(slot_dict,condition_dict,condition_table,ranked_table)
-      # TODO lowercase strings for comparison
-      result = {}
-      if same_table(list(condition_table.values()),list(ranked_table.values())):
-         logging.warning("same_table condition_table "+str(condition_table))
-         first_same = True
-         # iterate through conditions keeping all columns
-         for condition in condition_dict:
-            logging.warning("in single table condition loop for condition "+str(condition))
-            logging.warning("in single table condition loop for condition_table[condition] "+str(condition_table[condition]))
-            if first_same:
-               # first time through loop set base_df
-               base_df = df_dict[condition_table[condition]]
-               first_same = False
-            logging.warning("in single table condition loop for condition_dict[condition] "+str(condition_dict[condition]))
-            # TODO: need to handle list of conditions properly - currently OR for a list
-            if isinstance(condition_dict[condition], list):
-               base_df = base_df[base_df[condition].isin(condition_dict[condition])]
-            else:
-               base_df = base_df[base_df[condition] == str(condition_dict[condition])]
-         logging.warning("RESULT IS "+str(base_df[slot_dict["ranked_col"]]))
-         result = base_df[slot_dict["ranked_col"]]
-      else:
-         logging.warning("different condition_table"+str(condition_table)+" ranked_table "+str(ranked_table))
-         # TODO: eventually want to consider a class to replace all the various dictionaries
-         # but for now, just make the condition and ranked table containers dictionaries indexed by slot/column
-         # rather than lists
-         
-         # condition and rank in different tables
-         first_different = True
-         child_key_df_dict = {}
-         for condition in condition_table:
-            # check if condition value is a list
-            # for this condition, build the list of columns to pull from the child table
-            condition_columns_to_pull = get_condition_columns_to_pull(child_key, ranked_table, condition_table[condition])
-            if isinstance(condition_dict[condition], list):
-               # TODO complete logic for dealing with conditions that are lists
-               logging.warning("condition_dict is a list "+str(condition))
-               sub_condition_df_dict = {}
-               # iterate through each element in the condition value list getting a df of matching child keys
-               for sub_condition in condition_dict[condition]:
-                  logging.warning("sub_condition is "+str(sub_condition))
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
-                  logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
-                  logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
-               logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
-               # merge the child key dfs to get a single df containing the intersection of child keys
-               first_sub_condition = True
-               for sub_condition in sub_condition_df_dict:
-                  logging.warning("sub_condition in merge loop is "+str(sub_condition))
-                  if first_sub_condition:
-                     first_sub_condition = False
-                     child_key_df_dict[condition] = sub_condition_df_dict[sub_condition]
-                  else:
-                     child_key_df_dict[condition] = pd.merge(child_key_df_dict[condition],sub_condition_df_dict[sub_condition],on=child_key,how='inner')
-                  logging.warning("sub_condition child_key_df_dict[condition] len is "+str(len(child_key_df_dict[condition])))
-               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
-            else:
-               # condition is not a list
-               logging.warning("in multi table condition loop for not list condition "+str(condition))
-               # build df that just contains child_keys for this
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
-               logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
-         for condition in condition_table:
-            # iteratively merge child key tables
-            if first_different:
-               logging.warning("got first different "+str(condition))
-               logging.warning("number of rows in child_key_df second loop "+str(len(child_key_df_dict[condition].index)))               
-               result_child_merge = child_key_df_dict[condition]
-               first_different = False
-            else:
-               result_child_merge = pd.merge(result_child_merge,child_key_df_dict[condition],on=child_key,how='inner')
-         # now merge with parent table
-         logging.warning("number of rows in child_key_df "+str(len(result_child_merge.index)))
-         logging.warning("type of result_child_merge is "+str(type(type(result_child_merge))))
-         for item_c in result_child_merge:
-            logging.warning("item is "+str(item_c))
-         first_final = True
-         # TODO need to get table from among ranked_tables that has to be merged
-         result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[slot_dict["ranked_col"]]
-      '''
+      # call major logic to get results - keep this common for all actions that require filtering and joining of tables
+      result = generate_result(slot_dict,condition_dict,condition_table,ranked_table)      
       logging.warning("number of rows in result "+str(len(result)))
       # TODO NEED TO FIX DISPLAY OF MULTI ENTRY OUTPUT - CURRENTLY GLITCHY
       # output result
       # for index, row in df.iterrows():
       logging.warning("result is "+str(result))
-      for index, row in result.iterrows():
-         logging.warning(str(result.loc[[index]]))
-         dispatcher.utter_message(str(result.loc[[index]]))
-
-      
+      output_result(dispatcher,result)
       logging.warning("COMMENT: end of transmission")
       
-      dispatcher.utter_message("COMMENT: end of transmission validated FM")
       # TODO more elegant way to clear out used slots
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
@@ -925,7 +841,7 @@ class action_clear_slots(Action):
    def name(self) -> Text:
       return "action_clear_slots"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-
+      logging.warning("IN CLEAR SLOTS")
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 
@@ -948,6 +864,7 @@ class action_condition_by_media(Action):
    def name(self) -> Text:
       return "action_condition_by_media"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      slot_dict = {}
       slot_dict = tracker.current_slot_values()
       # TODO generalize this code to deal with media in general - some kind of metadata in schema to identify media-related columns
       # and code to find media file names and paths and render per media type
@@ -956,7 +873,8 @@ class action_condition_by_media(Action):
       logging.warning("poster_file is "+str(poster_file.iloc[0]))
       img = image_path+str(poster_file.iloc[0])
       logging.warning("img is "+str(img))
-      logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel()))
+      logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel())) 
+      # special incantation required to get a graphic to display - none of the 3 other half-baked recommendations worked
       if tracker.get_latest_input_channel() == 'facebook':
          
          message = {
@@ -972,12 +890,7 @@ class action_condition_by_media(Action):
          dispatcher.utter_custom_json(message)
       else:
          dispatcher.utter_message(img)
-      '''
-      logging.warning("about to try take 2")
-      dispatcher.utter_template("utter_video", tracker, False, image = "https://my.image.com/image.png")
-      '''
-      dispatcher.utter_message("COMMENT: end of transmission validated")
-      # 5.	return [SlotSet("account_type", data["account_type"])]
+      logging.warning("COMMENT: end of transmission validated")
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 
@@ -986,6 +899,7 @@ class action_condition_by_language(Action):
    def name(self) -> Text:
       return "action_condition_by_language"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      slot_dict = {}
       slot_dict = tracker.current_slot_values()
       #for slot_entry in slot_dict:
       #   dispatcher.utter_message(str(slot_entry))
