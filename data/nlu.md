@@ -17,14 +17,23 @@
 
 ## intent:condition_by_media
 - Show [poster](media) for [When Harry Met Sally](movie)
+- [poster](media) for [GoldenEye](movie)
+- [poster](media) for [Heat](movie)
 
 ## intent:condition_by_movie_ordered
 - rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
 
 
 ## intent:condition_by_movie 
+- [Moneypenny](character) [actresses](ranked_col)
+- [actors](ranked_col) who played [Moneypenny](character)
+- [actresses](ranked_col) who played [Moneypenny](character)
+- [when](ranked_col) did [Star Trek](movie) get released
+- what [years](ranked_col) did [Star Trek](movie) get released
 - list [movies](ranked_col) directed by [Woody Allen](director)
 - [characters](ranked_col) played by [Tom Hanks](cast_name)
+- [characters](ranked_col) played by [Sean Connery](cast_name)
+- [characters](ranked_col) and [movies](ranked_col) played by [Sean Connery](cast_name)
 - [characters](ranked_col) and [movies](ranked_col) played by [Tom Hanks](cast_name)
 - [characters](ranked_col) with [movies](ranked_col) played by [Tom Hanks](cast_name)
 - list [movies](ranked_col) with [Marilyn Monroe](cast_name)

@@ -45,11 +45,6 @@
     - action_condition_by_movie
 
 
-## say goodbye
-* goodbye
-  - utter_goodbye
-
-
 ## New Story
 
 * greet
