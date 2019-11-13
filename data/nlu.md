@@ -19,9 +19,23 @@
 - Show [poster](media) for [When Harry Met Sally](movie)
 - [poster](media) for [GoldenEye](movie)
 - [poster](media) for [Heat](movie)
+- [poster](media) of [GoldenEye](movie)
+- [poster](media) of [Heat](movie)
+- show [poster](media) of [GoldenEye](movie)
+- show [poster](media) of [Heat](movie)
+- show me the [poster](media) of [GoldenEye](movie)
+- show me the [poster](media) of [Heat](movie)
+- show me the [poster](media) for [GoldenEye](movie)
+- show me the [poster](media) for [Heat](movie)
+- show me the [video](media) for [Ballroom Blitz](movie)
+
 
 ## intent:condition_by_movie_ordered
 - rank [Woody Allen](director) [movies](ranked_col) by [popularity](rank_axis)
+- top [movies](ranked_col) from [1996](year)
+- top [movies](ranked_col) for [1996](year)
+- top [movies](ranked_col) of [1996](year)
+- top [movies](ranked_col) from [1996](year) by [popularity](rank_axis)
 
 
 ## intent:condition_by_movie 
@@ -76,6 +90,7 @@
 - what [year](ranked_col) did [Toy Story](movie) come out
 - what [year](ranked_col) did [Taxi Driver](movie) come out
 - what [year](ranked_col) did [Braveheart](movie) come out
+- what [year](ranked_col) did [GoldenEye](movie) come out
 - what was the [budget](ranked_col) for [Goldfinger](movie)
 - what was the [budget](ranked_col) for [GoldenEye](movie
 - what was the [budget](ranked_col) and [revenue](ranked_col) for [GoldenEye](movie)

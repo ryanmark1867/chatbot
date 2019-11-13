@@ -27,6 +27,23 @@
 	- slot{"rank_axis":"popularity"}
     - action_condition_by_movie_ordered
 
+## New Story
+* greet
+    - utter_what_next
+* condition_by_movie_ordered{"ranked_col":"movies","year":"1996","rank_axis":"popularity"}
+    - slot{"ranked_col":"movies"}
+    - slot{"year":"1996"}
+	- slot{"rank_axis":"popularity"}
+    - action_condition_by_movie_ordered
+
+## New Story
+* greet
+    - utter_what_next
+* condition_by_movie_ordered{"ranked_col":"movies","year":"1996"}
+    - slot{"ranked_col":"movies"}
+    - slot{"year":"1996"}
+    - action_condition_by_movie_ordered
+
 
 ## New Story
 * greet
