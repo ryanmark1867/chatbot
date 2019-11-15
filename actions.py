@@ -22,6 +22,18 @@ import decimal
 import collections
 from collections import Counter
 
+# define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
+# credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
+parent_key = 'id'
+child_key = 'movie_id'
+parent_table = 'movies'
+default_rank = 'popularity'
+# limit output to a reasonable number if there are lots
+output_limit = 10
+big_files = False
+child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
+
+
 # TODO figure out that even after setting logging level to debug, debug logging doesn't appear in the output
 # for now, just keep warning messages for basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -45,12 +57,20 @@ def json_check(string, placeholder):
 
 # define paths for movie dataset files
 
+
 path_dict = {}
-path_dict['links'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/links_small.csv'
-path_dict['movies'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/movies_metadata_small.csv'
-path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/ratings_small.csv'
-path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
-path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
+if big_files:
+   path_dict['links'] = 'https://drive.google.com/file/d/1CDVzffvKMcdmTKs_Xq2FbN9p6TKyZv3x/view?usp=sharing'
+   path_dict['movies'] = 'https://drive.google.com/file/d/1CDVzffvKMcdmTKs_Xq2FbN9p6TKyZv3x/view?usp=sharingg'
+   path_dict['ratings'] = 'https://drive.google.com/file/d/1QOqYdmeZrTwAcZHGj_drXgSDQc6I-ud-/view?usp=sharing'
+   path_dict['credits'] = 'https://drive.google.com/file/d/1B2xml6gZiZ-JfxqDxKGxsQOBssRWbeRU/view?usp=sharing'
+   path_dict['keywords'] = 'https://drive.google.com/file/d/1B2xml6gZiZ-JfxqDxKGxsQOBssRWbeRU/view?usp=sharing'
+else:
+   path_dict['links'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/links_small.csv'
+   path_dict['movies'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/movies_metadata_small.csv'
+   path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/ratings_small.csv'
+   path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
+   path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
 image_path = 'https://image.tmdb.org/t/p/w500'
 
 media_dict = {}
@@ -74,7 +94,7 @@ json_dict['keywords'] = ['keywords']
 # map various strings to correct column names
 # define synonyms (TODO see how to move at least a subset of these to Rasa level so they don't have to be maintained at Python layer)
 slot_map = dict.fromkeys(['movies','movie name','movie','title','original_title'],'original_title')
-slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview'],'overview'))
+slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview','story','Story','Plot'],'overview'))
 slot_map.update(dict.fromkeys(['release date','release_date'],'release_date'))
 slot_map.update(dict.fromkeys(['year','when'],'year'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
@@ -93,12 +113,13 @@ slot_map.update(dict.fromkeys(['language','movies_language_name'], 'movies_langu
 slot_map.update(dict.fromkeys(['genre','genre_name'], 'genre_name'))
 slot_map.update(dict.fromkeys(['keyword','keyword_name'], 'keyword_name'))
 slot_map.update(dict.fromkeys(['ascending'], 'ascending'))
+slot_map.update(dict.fromkeys(['Costume_Design'], 'Costume_Design'))
 
 
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","character","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","character","Costume Design","story","plot","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -219,15 +240,6 @@ def create_crew_by_job_dfs(credits_df,df_dict):
    return(df_dict)
 
 
-# define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
-# credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
-parent_key = 'id'
-child_key = 'movie_id'
-parent_table = 'movies'
-default_rank = 'popularity'
-# limit output to a reasonable number if there are lots
-output_limit = 10
-child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 # main prep code block
 df_dict = create_crew_by_job_dfs(df_dict['credits_crew'],df_dict)
@@ -772,8 +784,8 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
          logging.warning("result_col_list is "+str(result_col_list))
          result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[result_col_list]
          logging.warning("about to leave generate_result")   
-   except:
-      logging.warning("exception generated")
+   except Exception as e:
+      logging.warning("exception generated "+str(e))
       dispatcher.utter_message("query generated error - please continue with next query")
    else:
       logging.warning("exception not generated")
@@ -785,46 +797,50 @@ class action_condition_by_movie_ordered(Action):
       return "action_condition_by_movie_ordered"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       logging.warning("IN CONDITION BY MOVIE ORDERED")
-      # get dictionary of slot values
-      slot_dict = {}
-      slot_dict = tracker.current_slot_values()
-      # apply mappings in slot_dict from Rasa to table schema
-      slot_dict = prep_slot_dict(slot_dict)
-      condition_dict = {}
-      condition_dict = get_condition_columns(slot_dict)
-      if slot_dict["rank_axis"] == None:
-         slot_dict["rank_axis"] = default_rank
-      # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
-      logging.warning("ABOUT TO GET CONDITION TABLE ")
-      condition_table = get_table(list(condition_dict.keys()),movie_schema)
-      logging.warning("ABOUT TO GET RANKED TABLE ")
-      # if no ranking column is specified, assume default
+      try:
+         # get dictionary of slot values
+         slot_dict = {}
+         slot_dict = tracker.current_slot_values()
+         # apply mappings in slot_dict from Rasa to table schema
+         slot_dict = prep_slot_dict(slot_dict)
+         condition_dict = {}
+         condition_dict = get_condition_columns(slot_dict)
+         if slot_dict["rank_axis"] == None:
+            slot_dict["rank_axis"] = default_rank
+         # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
+         logging.warning("ABOUT TO GET CONDITION TABLE ")
+         condition_table = get_table(list(condition_dict.keys()),movie_schema)
+         logging.warning("ABOUT TO GET RANKED TABLE ")
+         # if no ranking column is specified, assume default
       
-      ranked_table = get_table(slot_dict["ranked_col"],movie_schema)
-      logging.warning("ABOUT TO GET SORT TABLE ")
-      sort_table = get_table([slot_dict["rank_axis"]],movie_schema)
-      logging.warning("condition_dict is "+str(condition_dict))
-      logging.warning("condition_table is "+str(condition_table))
-      logging.warning("ranked_col is "+str(slot_dict["ranked_col"]))
-      logging.warning("ranked_table is "+str(ranked_table))
+         ranked_table = get_table(slot_dict["ranked_col"],movie_schema)
+         logging.warning("ABOUT TO GET SORT TABLE ")
+         sort_table = get_table([slot_dict["rank_axis"]],movie_schema)
+         logging.warning("condition_dict is "+str(condition_dict))
+         logging.warning("condition_table is "+str(condition_table))
+         logging.warning("ranked_col is "+str(slot_dict["ranked_col"]))
+         logging.warning("ranked_table is "+str(ranked_table))
       
-      logging.warning("sort_col is "+str(slot_dict["rank_axis"]))
-      logging.warning("sort_table is "+str(sort_table))
-      # work through condition columns to get preliminary result
-      result_pre_sort = generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher)
-      logging.warning("past result_pre_sort")
-      logging.warning(" result_pre_sort type"+str(type(result_pre_sort)))
-      logging.warning(" df_dict[sort_table] type"+str(type(df_dict[sort_table[slot_dict["rank_axis"]]])))
-      # check the direction of sort
-      if slot_dict["ascending_descending"] == "ascending":
-         sort_direction_ascending = True
-      else:
-         sort_direction_ascending = False
-      result = result_pre_sort.sort_values(by = [slot_dict["rank_axis"]],ascending=sort_direction_ascending)[slot_dict["ranked_col"]]
-      if len(result) > 0:
-         output_result(dispatcher,result)
-      else:
-         dispatcher.utter_message("empty result - please try another query")
+         logging.warning("sort_col is "+str(slot_dict["rank_axis"]))
+         logging.warning("sort_table is "+str(sort_table))
+         # work through condition columns to get preliminary result
+         result_pre_sort = generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher)
+         logging.warning("past result_pre_sort")
+         logging.warning(" result_pre_sort type"+str(type(result_pre_sort)))
+         logging.warning(" df_dict[sort_table] type"+str(type(df_dict[sort_table[slot_dict["rank_axis"]]])))
+         # check the direction of sort
+         if slot_dict["ascending_descending"] == "ascending":
+            sort_direction_ascending = True
+         else:
+            sort_direction_ascending = False
+         result = result_pre_sort.sort_values(by = [slot_dict["rank_axis"]],ascending=sort_direction_ascending)[slot_dict["ranked_col"]]
+         if len(result) > 0:
+            output_result(dispatcher,result)
+         else:
+            dispatcher.utter_message("empty result - please try another query")
+      except Exception as e:
+         logging.warning("exception generated "+str(e))
+         dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission FM")
       
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
@@ -862,16 +878,14 @@ class action_condition_by_movie(Action):
          # call major logic to get results - keep this common for all actions that require filtering and joining of tables
          result = generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher)      
          logging.warning("number of rows in result "+str(len(result)))
-         # TODO NEED TO FIX DISPLAY OF MULTI ENTRY OUTPUT - CURRENTLY GLITCHY
          # output result
-         # for index, row in df.iterrows():
          logging.warning("result is "+str(result))
          if len(result) > 0:
             output_result(dispatcher,result)
          else:
             dispatcher.utter_message("empty result - please try another query")
-      except:
-         logging.warning("exception generated")
+      except Exception as e:
+         logging.warning("exception generated "+str(e))
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission")
       
