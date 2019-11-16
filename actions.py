@@ -687,9 +687,18 @@ def output_result(dispatcher,result):
       logging.warning(str_row_log)
       dispatcher.utter_message(str_row)
    return()
+
+def get_key_column(table):
+   ''' return the key column for the input table'''
+   # TODO want a more sophisticated approach for general schemas
+   if table == parent_table:
+      return_key = parent_key
+   else:
+      return_key = child_key
+   return(return_key)
    
 def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher):
-   #result = {}
+   ''' main function to compile and execute query to iteratively select and join to get result set'''
    # start with a fresh dataframe
    result = pd.DataFrame()
    try:
@@ -730,7 +739,7 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
          for condition in condition_table:
             # check if condition value is a list
             # for this condition, build the list of columns to pull from the child table
-            condition_columns_to_pull = get_condition_columns_to_pull(child_key, ranked_table, condition_table[condition])
+            condition_columns_to_pull = get_condition_columns_to_pull(get_key_column(condition_table[condition]), ranked_table, condition_table[condition])
             if isinstance(condition_dict[condition], list):
                # TODO complete logic for dealing with conditions that are lists
                logging.warning("condition_dict is a list "+str(condition))
