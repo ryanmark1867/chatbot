@@ -28,6 +28,8 @@ parent_key = 'id'
 child_key = 'movie_id'
 parent_table = 'movies'
 default_rank = 'popularity'
+# switch to allow exceptions in try blocks to be exposed
+debug_on = True
 # limit output to a reasonable number if there are lots
 output_limit = 10
 big_files = False
@@ -702,6 +704,7 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
    # start with a fresh dataframe
    result = pd.DataFrame()
    try:
+      logging.warning("RC PRE LOOP 3 slot_dict[ranked_col] is"+str(slot_dict["ranked_col"]))
       if same_table(list(condition_table.values()),list(ranked_table.values())):
          logging.warning("same_table condition_table "+str(condition_table))
          first_same = True
@@ -778,6 +781,7 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
             else:
                result_child_merge = pd.merge(result_child_merge,child_key_df_dict[condition],on=child_key,how='inner')
          # now merge with parent table
+         logging.warning("RC PRE LOOP 2 slot_dict[ranked_col] is"+str(slot_dict["ranked_col"]))
          logging.warning("number of rows in child_key_df "+str(len(result_child_merge.index)))
          logging.warning("type of result_child_merge is "+str(type(type(result_child_merge))))
          for item_c in result_child_merge:
@@ -786,14 +790,80 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
          #
          logging.warning("slot_dict[ranked_col] is "+str(slot_dict["ranked_col"]))
          logging.warning("parent_key is "+str(parent_key))
-         result_col_list = slot_dict["ranked_col"]
-         result_col_list.append(parent_key)
+         result_col_list = slot_dict["ranked_col"].copy()
+         # result_col_list.append(parent_key)
          if slot_dict["rank_axis"] != None:
             result_col_list.append(slot_dict["rank_axis"])
          logging.warning("result_col_list is "+str(result_col_list))
-         result = pd.merge(df_dict[parent_table],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[result_col_list]
+         logging.warning("left table is "+str(ranked_table[slot_dict["ranked_col"][0]]))
+         # define left join key
+         
+         # define right join key
+         logging.warning("left cols is "+str(list(ranked_table[slot_dict["ranked_col"][0]])))
+         logging.warning("right cols is "+str(list(result_child_merge)))
+         if child_key in list(result_child_merge):
+            left_key = child_key
+         else:
+            left_key = parent_key
+         # original
+         #result = pd.merge(df_dict[ranked_table],result_child_merge,left_on=left_key,right_on=child_key,how='inner')[result_col_list]
+         # join ranked table with sub-result table and pull the columns from result_col_list
+         # TODO - if there are queries with multiple ranked_cols, deal with whole list
+         logging.warning("left table is "+str(ranked_table[slot_dict["ranked_col"][0]]))
+         
+         left_merge_col = slot_dict["ranked_col"][0]
+         left_merge_df = df_dict[ranked_table[left_merge_col]]
+         
+         logging.warning("result_col_list is "+str([result_col_list]))
+         logging.warning("RC PRE LOOP slot_dict[ranked_col] is"+str(slot_dict["ranked_col"]))
+         # iterate through rank columns, joining with result_child_merge
+         result = result_child_merge
+         logging.warning("RC PRE LOOP left table RESULT is"+str(result))
+         logging.warning("RC PRE LOOP iterating through "+str(slot_dict["ranked_col"]))
+         # put a test in here to check for just the rank_col that aren't also condition cols (see code in get_condition_columns_to_pull function)
+         for rank_col in slot_dict["ranked_col"]:
+            # if this column has already been pulled then don't do it again
+            # TODO more elegant way of doing this
+            if rank_col in condition_columns_to_pull:
+               logging.warning("RC LOOP got CONTINUE with "+str(rank_col))
+               continue
+            logging.warning("RC LOOP: rank_col is "+str(rank_col))
+            right_merge_df = df_dict[ranked_table[rank_col]]
+            # use child_key by default
+            logging.warning("RC LOOP: right cols are "+str(list(right_merge_df)))
+            logging.warning("RC LOOP: child key is "+str(child_key))
+            if child_key in list(right_merge_df):
+               logging.warning("RC LOOP: got child "+str(child_key))
+               right_key = child_key
+            else:
+               logging.warning("RC LOOP: got parent key is "+str(parent_key))
+               right_key = parent_key
+            logging.warning("RC LOOP: left_key is "+str(left_key))
+            logging.warning("RC LOOP: right_key is "+str(right_key))
+            logging.warning("RC LOOP: left cols are "+str(list(result)))
+            logging.warning("RC LOOP: right cols are "+str(list(right_merge_df)))
+            # take subset of cols on right to avoid dup cols
+                      
+            # TODO find more elegant way to get delta between two lists
+            cols_to_use = list(right_merge_df)
+            logging.warning("RC LOOP: cols_to_use before is "+str(cols_to_use))
+            for col in list(right_merge_df):
+               if col in list(result) and col != right_key:
+                  cols_to_use.remove(col)
+            logging.warning("RC LOOP: cols_to_use before after "+str(cols_to_use))
+            logging.warning("RC LOOP PRE MERGE number of rows in result "+str(len(result.index)))
+            logging.warning("RC LOOP PRE MERGE number of rows in right_merge_df "+str(len(right_merge_df.index)))
+            result = pd.merge(result,right_merge_df[cols_to_use],left_on=left_key,right_on=right_key,how='inner')
+            #
+         # take the required subset of columns                          
+         logging.warning("AFTER RC LOOP: result cols are "+str(list(result)))
+         logging.warning("AFTER RC LOOP: result_col_list are "+str(result_col_list))
+         result = result[result_col_list]                         
+         #result = pd.merge(left_merge_df,result_child_merge,left_on=left_key,right_on=right_key,how='inner')[result_col_list]
          logging.warning("about to leave generate_result")   
    except Exception as e:
+      if debug_on:
+         raise
       logging.warning("exception generated "+str(e))
       dispatcher.utter_message("query generated error - please continue with next query")
    else:
@@ -848,6 +918,8 @@ class action_condition_by_movie_ordered(Action):
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
+         if debug_on:
+            raise
          logging.warning("exception generated "+str(e))
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission FM")
@@ -894,6 +966,8 @@ class action_condition_by_movie(Action):
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
+         if debug_on:
+            raise
          logging.warning("exception generated "+str(e))
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission")
@@ -975,6 +1049,8 @@ class action_condition_by_media(Action):
          else:
             dispatcher.utter_message(img)
       except:
+         if debug_on:
+            raise
          dispatcher.utter_message("could not find media - please try another query")
       logging.warning("COMMENT: end of transmission validated")
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
