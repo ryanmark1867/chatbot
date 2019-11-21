@@ -64,6 +64,18 @@
 - [director](ranked_col:Director) for [GoldenEye](movie)
 - [producer](ranked_col:Producer) for [Heat](movie)
 - [producer](ranked_col:Producer) for [GoldenEye](movie)
+- [characters](ranked_col:character) in [Tombstone](movie)
+- [Characters](ranked_col:character) in [Tombstone](movie)
+- [characters](ranked_col:character) in [Showgirls](movie)
+- [Characters](ranked_col:character) in [Showgirls](movie)
+- [characters](ranked_col:character) in [Heat](movie)
+- [Characters](ranked_col:character) in [Heat](movie)
+- [characters](ranked_col:character) and [actors](ranked_col:cast_name) in [Tombstone](movie)
+- [Characters](ranked_col:character) and [actors](ranked_col:cast_name)in [Tombstone](movie)
+- [characters](ranked_col:character) and [actors](ranked_col:cast_name)in [Showgirls](movie)
+- [Characters](ranked_col:character) and [actors](ranked_col:cast_name)in [Showgirls](movie)
+- [characters](ranked_col:character) and [actors](ranked_col:cast_name)in [Heat](movie)
+- [Characters](ranked_col:character) and [actors](ranked_col:cast_name)in [Heat](movie)
 - [Editor](ranked_col),[Producer](ranked_col), [Director](ranked_col) for [Heat](movie)
 - [Editor](ranked_col),[Producer](ranked_col), [Director](ranked_col) for [GoldenEye](movie)
 - [Editor](ranked_col),[Producer](ranked_col) and [Director](ranked_col) for [Heat](movie)
@@ -81,6 +93,8 @@
 - [Moneypenny](character) [actresses](ranked_col)
 - [actors](ranked_col:cast_name) who played [Moneypenny](character)
 - [actresses](ranked_col:cast_name) who played [Moneypenny](character)
+- [actors](ranked_col:cast_name) who played [James Bond](character)
+- [actors](ranked_col:cast_name) who played [Sherlock Holmes](character)
 - [when](ranked_col:year) did [Star Trek](movie) get released
 - [when](ranked_col:year) did [GoldenEye](movie) get released
 - what [years](ranked_col:year) did [Star Trek](movie) get released
