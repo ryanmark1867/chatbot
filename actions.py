@@ -28,11 +28,15 @@ parent_key = 'id'
 child_key = 'movie_id'
 parent_table = 'movies'
 default_rank = 'popularity'
+# switch to serialize dataframes
+save_files = False
+# switch to load from serialized dataframes
+saved_files = True
 # switch to allow exceptions in try blocks to be exposed
-debug_on = True
+debug_on = False
 # limit output to a reasonable number if there are lots
 output_limit = 10
-big_files = False
+big_files = True
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 
@@ -62,11 +66,12 @@ def json_check(string, placeholder):
 
 path_dict = {}
 if big_files:
-   path_dict['links'] = 'https://drive.google.com/file/d/1CDVzffvKMcdmTKs_Xq2FbN9p6TKyZv3x/view?usp=sharing'
-   path_dict['movies'] = 'https://drive.google.com/file/d/1CDVzffvKMcdmTKs_Xq2FbN9p6TKyZv3x/view?usp=sharingg'
-   path_dict['ratings'] = 'https://drive.google.com/file/d/1QOqYdmeZrTwAcZHGj_drXgSDQc6I-ud-/view?usp=sharing'
-   path_dict['credits'] = 'https://drive.google.com/file/d/1B2xml6gZiZ-JfxqDxKGxsQOBssRWbeRU/view?usp=sharing'
-   path_dict['keywords'] = 'https://drive.google.com/file/d/1B2xml6gZiZ-JfxqDxKGxsQOBssRWbeRU/view?usp=sharing'
+   path_dict['links'] = 'C:\personal\chatbot_july_2019\datasets\links.csv'
+   path_dict['movies'] = 'C:\personal\chatbot_july_2019\datasets\movies_metadata.csv'
+   # had to rename because \r means something!
+   path_dict['ratings'] = 'C:\personal\chatbot_july_2019\datasets\mratings.csv'
+   path_dict['credits'] = 'C:\personal\chatbot_july_2019\datasets\credits.csv'
+   path_dict['keywords'] = 'C:\personal\chatbot_july_2019\datasets\keywords.csv'
 else:
    path_dict['links'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/links_small.csv'
    path_dict['movies'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/movies_metadata_small.csv'
@@ -105,6 +110,8 @@ slot_map.update(dict.fromkeys(['German'],'de'))
 slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
 slot_map.update(dict.fromkeys(['director','Director'],'Director'))
+slot_map.update(dict.fromkeys(['producer','Producer'],'Producer'))
+slot_map.update(dict.fromkeys(['editor','Editor'],'Editor'))
 slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
 # slot_map.update(dict.fromkeys(['popularity','rating'],'rating'))
@@ -121,7 +128,7 @@ slot_map.update(dict.fromkeys(['Costume_Design'], 'Costume_Design'))
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","character","Costume Design","story","plot","director","Director","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","character","Costume Design","story","Editor","editor","plot","director","Director","Producer","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -137,10 +144,7 @@ def add_id_to_dict(dict_list,id_name,id):
 # load df_dict dictionary with dataframes corresponding to the datasets
 # if saved_files, load from pickled dataframes created previously by this code block
 # if save_files, save the 
-# switch to serialize dataframes
-save_files = False
-# switch to load from serialized dataframes
-saved_files = True
+
 df_dict = {}
 for file in path_dict:
    print("about to create df for ",file)
@@ -150,6 +154,7 @@ for file in path_dict:
       logging.warning("loading df from pickle file for : "+str(file))
       df_dict[file] = pd.read_pickle(str(file))
    else:
+      logging.warning("path is : "+str(path_dict[file]))
       df_dict[file] = pd.read_csv(path_dict[file])
       # manually cleaned up credits file - TODO make this real so input more resiliant
       for cols in json_dict[file]:
@@ -162,6 +167,13 @@ for file in path_dict:
          logging.warning(str(df_dict[file][cols].loc[[1]]))
          df_dict[file][cols] = df_dict[file].apply(lambda x: add_id_to_dict(x[cols],'movie_id',x['id']),axis=1)
          # create a new handle for the new dataframe
+         if big_files:
+            big_folder = "bigpickle\\"
+            new_handle = big_folder+str(file)+"_"+str(cols)
+         else:
+            
+            new_handle =  small_folder+str(file)+"_"+str(cols)
+            
          new_handle = str(file)+"_"+str(cols)
          logging.warning("new handle is "+new_handle)
          nh_list = df_dict[file][cols].values
@@ -177,9 +189,15 @@ if saved_files:
    for file in path_dict:
       for cols in json_dict[file]:
          # load pickled files corresponding to dataframes generated from JSON columns in original dataset
-         new_handle = str(file)+"_"+str(cols)
+         if big_files:
+            big_folder = "bigpickle\\"
+            read_handle = big_folder+str(file)+"_"+str(cols)
+         else:
+            small_folder = "smallpickle\\"
+            read_handle =  small_folder+str(file)+"_"+str(cols)
+         new_handle =  str(file)+"_"+str(cols)
          logging.warning("loading df from pickle file for : "+new_handle)
-         df_dict[new_handle] = pd.read_pickle(str(new_handle))
+         df_dict[new_handle] = pd.read_pickle(str(read_handle))
 if save_files:
    # have to go through df_dict again in a separate loop since new df_dict entries added in the above loop
    # save all the dataframes in the df_dict dictionary in separate pickle files
@@ -797,25 +815,14 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
          logging.warning("result_col_list is "+str(result_col_list))
          logging.warning("left table is "+str(ranked_table[slot_dict["ranked_col"][0]]))
          # define left join key
-         
-         # define right join key
-         logging.warning("left cols is "+str(list(ranked_table[slot_dict["ranked_col"][0]])))
-         logging.warning("right cols is "+str(list(result_child_merge)))
          if child_key in list(result_child_merge):
             left_key = child_key
          else:
             left_key = parent_key
-         # original
-         #result = pd.merge(df_dict[ranked_table],result_child_merge,left_on=left_key,right_on=child_key,how='inner')[result_col_list]
-         # join ranked table with sub-result table and pull the columns from result_col_list
-         # TODO - if there are queries with multiple ranked_cols, deal with whole list
          logging.warning("left table is "+str(ranked_table[slot_dict["ranked_col"][0]]))
          
          left_merge_col = slot_dict["ranked_col"][0]
          left_merge_df = df_dict[ranked_table[left_merge_col]]
-         
-         logging.warning("result_col_list is "+str([result_col_list]))
-         logging.warning("RC PRE LOOP slot_dict[ranked_col] is"+str(slot_dict["ranked_col"]))
          # iterate through rank columns, joining with result_child_merge
          result = result_child_merge
          logging.warning("RC PRE LOOP left table RESULT is"+str(result))
@@ -924,7 +931,7 @@ class action_condition_by_movie_ordered(Action):
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission FM")
       
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 
 
@@ -973,7 +980,7 @@ class action_condition_by_movie(Action):
       logging.warning("COMMENT: end of transmission")
       
       # TODO more elegant way to clear out used slots
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 class action_clear_slots(Action):
    """debug action from active chat to flush slots after failed query - otherwise bad slot values hang around and mess up subsequent queries"""
@@ -1006,12 +1013,11 @@ class action_condition_by_media(Action):
       logging.warning("IN CONDITION BY MEDIA")
       slot_dict = {}
       slot_dict = tracker.current_slot_values()
-      # load the media type
-      media_type = media_dict[slot_dict["media"]]
       # TODO generalize this code to deal with media in general - some kind of metadata in schema to identify media-related columns
       # and code to find media file names and paths and render per media type
+      # load the media type
+      media_type = media_dict[slot_dict["media"]]
       logging.warning("slot_dict['movie'] is "+str(slot_dict['movie']))
-      
       try:
          if slot_dict["movie"] == "Ballroom Blitz":
             img = "https://www.youtube.com/watch?v=gYnRmfgKAbg"
@@ -1033,17 +1039,7 @@ class action_condition_by_media(Action):
                   }
                }
             }
-            '''
-            message = {
-               "attachment": {
-                  "type": media_type,
-                  "payload": {
-                     "url": img,
-                     "is_reusable": False
-                  }
-               }
-            }
-            '''
+            
             logging.warning("about to utter_custom_json for "+str(tracker.get_latest_input_channel()))
             dispatcher.utter_custom_json(message)
          else:
@@ -1053,7 +1049,7 @@ class action_condition_by_media(Action):
             raise
          dispatcher.utter_message("could not find media - please try another query")
       logging.warning("COMMENT: end of transmission validated")
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
 
 
 class action_condition_by_language(Action):
