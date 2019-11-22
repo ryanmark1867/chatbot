@@ -111,6 +111,7 @@ slot_map.update(dict.fromkeys(['budget'],'budget'))
 slot_map.update(dict.fromkeys(['revenue'],'revenue'))
 slot_map.update(dict.fromkeys(['director','Director'],'Director'))
 slot_map.update(dict.fromkeys(['producer','Producer'],'Producer'))
+slot_map.update(dict.fromkeys(['costume_design','Costume_Design'],'Costume_Design'))
 slot_map.update(dict.fromkeys(['editor','Editor'],'Editor'))
 slot_map.update(dict.fromkeys(['original_language'],'original_language'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
@@ -152,7 +153,13 @@ for file in path_dict:
       # load pickled file corresponding to dataframes for the dataset files
       # pickled files for derived dataframes loaded below
       logging.warning("loading df from pickle file for : "+str(file))
-      df_dict[file] = pd.read_pickle(str(file))
+      if big_files:
+         big_folder = "bigpickle\\"
+         read_handle = big_folder+str(file)
+      else:
+         small_folder = "smallpickle\\"
+         read_handle =  small_folder+str(file)
+      df_dict[file] = pd.read_pickle(str(read_handle))
    else:
       logging.warning("path is : "+str(path_dict[file]))
       df_dict[file] = pd.read_csv(path_dict[file])
@@ -171,7 +178,7 @@ for file in path_dict:
             big_folder = "bigpickle\\"
             new_handle = big_folder+str(file)+"_"+str(cols)
          else:
-            
+            small_folder = "smallpickle\\"
             new_handle =  small_folder+str(file)+"_"+str(cols)
             
          new_handle = str(file)+"_"+str(cols)
@@ -397,7 +404,7 @@ class action_condition_by_year(Action):
          if i >= limiter:
             break
       dispatcher.utter_message("COMMENT: end of transmission")
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
 
         
@@ -931,7 +938,7 @@ class action_condition_by_movie_ordered(Action):
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission FM")
       
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
 
 
@@ -980,7 +987,7 @@ class action_condition_by_movie(Action):
       logging.warning("COMMENT: end of transmission")
       
       # TODO more elegant way to clear out used slots
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
 class action_clear_slots(Action):
    """debug action from active chat to flush slots after failed query - otherwise bad slot values hang around and mess up subsequent queries"""
@@ -988,7 +995,7 @@ class action_clear_slots(Action):
       return "action_clear_slots"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       logging.warning("IN CLEAR SLOTS")
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
 
       '''
@@ -1049,7 +1056,7 @@ class action_condition_by_media(Action):
             raise
          dispatcher.utter_message("could not find media - please try another query")
       logging.warning("COMMENT: end of transmission validated")
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("director",None),SlotSet("cast_name",None)]
+      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
 
 class action_condition_by_language(Action):
