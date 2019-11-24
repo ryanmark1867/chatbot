@@ -28,6 +28,7 @@ parent_key = 'id'
 child_key = 'movie_id'
 parent_table = 'movies'
 default_rank = 'popularity'
+default_ranked_col = 'original_title'
 # switch to serialize dataframes
 save_files = False
 # switch to load from serialized dataframes
@@ -37,6 +38,7 @@ debug_on = False
 # limit output to a reasonable number if there are lots
 output_limit = 10
 big_files = True
+avg_cols = ['rating']
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 
@@ -114,7 +116,9 @@ slot_map.update(dict.fromkeys(['producer','Producer'],'Producer'))
 slot_map.update(dict.fromkeys(['costume_design','Costume_Design'],'Costume_Design'))
 slot_map.update(dict.fromkeys(['editor','Editor'],'Editor'))
 slot_map.update(dict.fromkeys(['original_language'],'original_language'))
+slot_map.update(dict.fromkeys(['science fiction','Science Fiction','Science_Fiction'],'Science Fiction'))
 slot_map.update(dict.fromkeys(['funny','comedy','Comedy'],'Comedy'))
+slot_map.update(dict.fromkeys(['rating','Rating'],'rating'))
 # slot_map.update(dict.fromkeys(['popularity','rating'],'rating'))
 slot_map.update(dict.fromkeys(['cast','castmember','cast_name','actor','actors','actress','actresses'], 'cast_name'))
 slot_map.update(dict.fromkeys(['crew','crewmember','crew_name'], 'crew_name'))
@@ -129,7 +133,7 @@ slot_map.update(dict.fromkeys(['Costume_Design'], 'Costume_Design'))
 # define the subset of slots that can be condition columns:
 # TODO confirm whether this list should contain exclusively slot names from rasa (e.g. no "original_title")
 # TODO determine if possible to generate this list automatically instead of hand creating it
-slot_condition_columns = ["original_language","original_title","movie","character","Costume Design","story","Editor","editor","plot","director","Director","Producer","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
+slot_condition_columns = ["original_language","original_title","movie","Rating","rating","character","Costume Design","story","Editor","editor","plot","director","Director","Producer","genre","budget","overview","keyword","keyword_name","revenue","cast_name","crew_name","genre_name","year"]
 
 def add_id_to_dict(dict_list,id_name,id):
    ''' for list of dictionaries dict_list, add the entry "id_name":id to each dictionary in the list'''
@@ -190,6 +194,7 @@ for file in path_dict:
          # and add new dataframe to df_dict
          df_dict[new_handle] = pd.DataFrame(nh_list_single)
          logging.warning("post new_handle col add: "+str(df_dict[new_handle].head()))
+      # need to replace id column 
         
 # load up the generated dataframes that came from JSON
 if saved_files:
@@ -246,6 +251,9 @@ df_dict['movies_spoken_languages'].rename({'name':'movies_language_name'},axis=1
 df_dict['credits_cast'].rename({'name':'cast_name'},axis=1,inplace=True)
 df_dict['credits_crew'].rename({'name':'crew_name'},axis=1,inplace=True)
 df_dict['keywords_keywords'].rename({'name':'keyword_name'},axis=1,inplace=True)
+# there two have no JSON columns so need to explicitly rename key column to child_key
+df_dict['ratings'].rename({'movieId':child_key},axis=1,inplace=True)
+df_dict['links'].rename({'movieId':child_key},axis=1,inplace=True)
 # generate separate 'year' column from 'release_date'
 df_dict['movies']['year'] = df_dict['movies']['release_date'].str[:4]
 # deal with NaN values that mess up some MVP queries
@@ -406,91 +414,10 @@ class action_condition_by_year(Action):
       dispatcher.utter_message("COMMENT: end of transmission")
       return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
 
-
-        
-# version used for condition_by_cast
-def check_keyword_dict(dispatcher,id,keyword_list, keywords,dict_key):
-   # for id list id and keyword_list in JSON form, return the id value if
-   # keyword is there
-   id_there = False
-   logging.debug("about to start check_keyword_dict")
-   # make dictionary of keywords with values initialized to zero
-   k_list = {e1:0 for e1 in keywords}
-   str9 = "types id "+str(type(id))+" keyword_list "+str(type(keyword_list))+" keywords "+str(type(keywords))
-   logging.debug(str9)
-   for word in keywords:
-      str0 = "input to check_keyword_dict keyword  "+word
-      logging.debug(str0)
-   # TODO: there should be a more pythonic way to do this (check if a value occurs anywhere in a list of dictionaries
-   # that is more efficient that this loop
-   allthere = 0
-   str6 = "json.dump keyword_list is"+json.dumps(keyword_list)
-   logging.debug(str6)
-   for dict in keyword_list:
-      str5 = "dict[dict_key] is "+str(dict[dict_key])
-      logging.debug(str5)
-      #logging.debug(str(dict))
-      for word in keywords:
-         if word in dict[dict_key]:
-            str1 = "got a hit for word "+word
-            logging.debug(str1)
-            k_list[word] = 1
-   # check if all elements of keyword appear in one of the dictionaries            
-   logging.debug("about to leave check_keyword_dict")
-   if all(value == 1 for value in k_list.values()):
-      return(id)
-   else:
-      logging.debug("not all values 1")
-      return[]
+    
 
 
-class action_condition_by_keyword(Action):
-   """return the values scoped by keyword"""
-   def name(self) -> Text:
-      return "action_condition_by_keyword"
-   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      slot_dict = tracker.current_slot_values()
-      #for slot_entry in slot_dict:
-      #   dispatcher.utter_message(str(slot_entry))
-      #   dispatcher.utter_message(str(slot_dict[slot_entry]))
-      ranked_col = tracker.get_slot("ranked_col")
-      language = tracker.get_slot("language")
-      keyword = tracker.get_slot("keyword")
-      top_bottom = tracker.get_slot("top_bottom")
-      csv_row = int(tracker.get_slot('row_number'))
-      genre = tracker.get_slot("genre")
-      sort_col = tracker.get_slot("sort_col")
-      str1 = "COMMENT: getting "+ str(ranked_col) + " for keyword "+str(keyword)
-      dispatcher.utter_message(str1)
-      df_movies=df_dict['movies']
-      df_keywords = df_dict['keywords']
-      ranked_col = slot_map[ranked_col]
-      # interpret string of list from CSV as a Python list - moved to loading section to avoid copy being redone
-      ## TODO this is gross - need a better way to get the list of ids
-      output = list(filter(None,df_keywords.apply(lambda x: check_keyword_dict(dispatcher, x['id'],x['keywords'],keyword,'name'),axis=1)))
-      result_big = df_movies.loc[df_movies['id'].isin(output)]
-      result = df_movies[ranked_col][df_movies['id'].isin(output)]
-      limiter = int(csv_row)
-      str4 = "result len " + str(len(result))
-      i = 0
-      for item in result:
-         dispatcher.utter_message(str(item))
-         i = i+1
-         if i >= limiter:
-            break
-      dispatcher.utter_message("COMMENT: genre sublist")
-      if genre != None:
-         genre = slot_map[genre]
-         str5 = "genre is "+genre
-         dispatcher.utter_message(str(str5))
-         genre_output = list(filter(None,result_big.apply(lambda x: check_keyword_dict(dispatcher, x[ranked_col],x['genres'],genre,'name'),axis=1)))
-         for item in genre_output:
-            dispatcher.utter_message(str(item))
-            i = i+1
-            if i >= limiter:
-               break
-      dispatcher.utter_message("COMMENT: end of transmission")
-      return []
+
 
 # TODO: instead of the complex multifaceted structure of various dictionaries and lists, encapsulate in a class
 # to make the updates simpler and to avoid losing track of what's a list vs. dictionary
@@ -572,104 +499,9 @@ def get_results_same_table(result,condition_dict,condition_table,slot_dict):
    result = base_df[slot_dict["ranked_col"]]
    return(result)
 
-def get_result_diff_table(result,condition_dict,condition_table,slot_dict):
-   logging.warning("different condition_table"+str(condition_table)+" ranked_table "+str(ranked_table))
-   # TODO: eventually want to consider a class to replace all the various dictionaries
-   # but for now, just make the condition and ranked table containers dictionaries indexed by slot/column
-   # rather than lists
-   # condition and rank in different tables
-   first_different = True
-   child_key_df_dict = {}
-   for condition in condition_table:
-      # check if condition value is a list
-      if isinstance(condition_dict[condition], list):
-         #child_key_df_dict[condition] = build_condition_list_df(condition_dict[condition],condition
-         # TODO complete logic for dealing with conditions that are lists
-         logging.warning("condition_dict is a list "+str(condition))
-         sub_condition_df_dict = {}
-         # iterate through each element in the condition value list getting a df of matching child keys
-         for sub_condition in condition_dict[condition]:
-            logging.warning("sub_condition is "+str(sub_condition))
-            sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][child_key]
-            logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
-            logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
-         logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
-         # merge the child key dfs to get a single df containing the intersection of child keys
-         first_sub_condition = True
-         for sub_condition in sub_condition_df_dict:
-            logging.warning("sub_condition in merge loop is "+str(sub_condition))
-            if first_sub_condition:
-               first_sub_condition = False
-               child_key_df_dict[condition] = sub_condition_df_dict[sub_condition]
-            else:
-               child_key_df_dict[condition] = pd.merge(child_key_df_dict[condition],sub_condition_df_dict[sub_condition],on=child_key,how='inner')
-            logging.warning("sub_condition child_key_df_dict[condition] len is "+str(len(child_key_df_dict[condition])))
-         logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
-      else:
-         # condition is not a list
-         logging.warning("in multi table condition loop for not list condition "+str(condition))
-         # build df that just contains child_keys for this
-         child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][child_key]
-         logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
-   for condition in condition_table:
-      # iteratively merge child key tables
-      if first_different:
-         logging.warning("got first different "+str(condition))
-         logging.warning("number of rows in child_key_df second loop "+str(len(child_key_df_dict[condition].index)))               
-         result_child_merge = child_key_df_dict[condition]
-         first_different = False
-      else:
-         result_child_merge = pd.merge(result_child_merge,child_key_df_dict[condition],on=child_key,how='inner')
-   # now merge with parent table
-   logging.warning("number of rows in child_key_df "+str(len(result_child_merge.index)))
-   logging.warning("type of result_child_merge is "+str(type(type(result_child_merge))))
-   for item_c in result_child_merge:
-      logging.warning("item is "+str(item_c))
-   first_final = True
-   for condition in ranked_table:
-         # TODO need to find a way to get the ranked table if there are multiple ranked columns
-         logging.warning("in final ranked table loop for condition "+str(condition))
-         result[condition] = pd.merge(df_dict[ranked_table[condition]],result_child_merge,left_on=parent_key,right_on=child_key,how='inner')[condition]
-   
-   return(result)
+
     
-# refactored condition_by_cast using calls to power functions
-class action_condition_by_cast(Action):
-   """return the values scoped by cast"""
-   def name(self) -> Text:
-      return "action_condition_by_cast"
-   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-      # get dictionary of slot values
-      slot_dict = {}
-      slot_dict = tracker.current_slot_values()
-      # make required mappings of slot names and slot values
-      slot_dict = prep_slot_dict(slot_dict)
-      condition_dict = {}
-      condition_dict = get_condition_columns(slot_dict)
-      # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
-      condition_table = get_table(list(condition_dict.keys()),movie_schema)
-      # TODO change ranked_col slot to a list in rasa, to match condition
-      ranked_table = get_table(slot_dict["ranked_col"],movie_schema)      
-      logging.warning("condition_dict is "+str(condition_dict))
-      logging.warning("condition_table is "+str(condition_table))
-      logging.warning("ranked_cod is "+str(slot_dict["ranked_col"]))
-      logging.warning("ranked_table is "+str(ranked_table))
-      result = {}
-      if same_table(list(condition_table.values()),list(ranked_table.values())):
-         result = get_results_same_table(result,condition_dict,condition_table,slot_dict)
-      else:
-         result = get_result_diff_table(result,condition_dict,condition_table,slot_dict)
-      # output results
-      logging.warning("number of rows in result "+str(len(result))) 
-      for result_item in result:
-         logging.warning("number of rows in result][result_item "+str(len(result[result_item].index)))       
-         logging.warning("in output loop ")
-         for nested_item in result[result_item]:
-            logging.warning(str(nested_item))
-            dispatcher.utter_message(str(nested_item))
-      logging.warning("COMMENT: end of transmission")
-      dispatcher.utter_message("COMMENT: end of transmission validated")
-      return []
+
 
 def get_selection_column_list(condition_table_list,ranked_table_list):
    ''' get list of columns to pull in final result'''
@@ -687,32 +519,38 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
       column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
    return(column_list)
 
-def clear_out_slots(persistance_flag,slot_structure):
-   logging.warning("clearing out for persistance_flag "+str(persistance_flag))
-   if persistance_flag != "True":
-      # clear out structure
-      for slot in slot_structure:
-         logging.warning("about to set to None "+str(slot))
-         SlotSet(slot, None)
-         SlotSet("persistance","False")
-   return()
-
-def output_result(dispatcher,result):
+def output_result(dispatcher,result,row_range):
    ''' common output to bot interface and logger '''
    i = 0
-   for index, row in result.iterrows():
-      str_row = ""
-      str_row_log = ""
-      i = i+1
-      if i > output_limit:
-         break
-      for col in result.columns:
-         # don't output ID columns for final bot rendering
-         if (col != parent_key and col != child_key):
-            str_row = str_row+" "+str(row[col])+"\t"
-         str_row_log = str_row_log+" "+str(row[col])+"\t"
-      logging.warning(str_row_log)
-      dispatcher.utter_message(str_row)
+   # if the range to print is None, use overall default. Otherwise use range
+   # TODO symptom where if row_range in query matches value in training sample output format is strange. Workaround now in training.
+   if row_range == None:
+      print_limit = output_limit
+   else:
+      print_limit = int(row_range)
+   # check if the result df contains a column (like rating) that needs to be averaged
+   avg_set = list(set(list(result)) & set(avg_cols))
+   if not avg_set:
+      # no average columns to calculate
+      for index, row in result.iterrows():
+         str_row = ""
+         str_row_log = ""
+         i = i+1
+         if i > print_limit:
+            break
+         for col in result.columns:
+            # don't output ID columns for final bot rendering
+            if (col != parent_key and col != child_key):
+               str_row = str_row+" "+str(row[col])+"\t"
+            str_row_log = str_row_log+" "+str(row[col])+"\t"
+         logging.warning(str_row_log)
+         dispatcher.utter_message(str_row)
+   else:
+      # need to print average of columns
+      for col in avg_set:
+         result["avg"]=result[col].astype(float)
+         logging.warning(result["avg"].mean())
+         dispatcher.utter_message(str(round(result["avg"].mean(),2)))
    return()
 
 def get_key_column(table):
@@ -894,12 +732,19 @@ class action_condition_by_movie_ordered(Action):
          # get dictionary of slot values
          slot_dict = {}
          slot_dict = tracker.current_slot_values()
+          # set defaults
+         if slot_dict["rank_axis"] == None:
+            slot_dict["rank_axis"] = default_rank
+         if slot_dict["ascending_descending"] == None:
+            slot_dict["ascending_descending"] = "descending"
+         if slot_dict["ranked_col"] == None:
+            slot_dict["ranked_col"] = [default_ranked_col]
          # apply mappings in slot_dict from Rasa to table schema
          slot_dict = prep_slot_dict(slot_dict)
          condition_dict = {}
+        
          condition_dict = get_condition_columns(slot_dict)
-         if slot_dict["rank_axis"] == None:
-            slot_dict["rank_axis"] = default_rank
+         
          # get_table expects a list of columns as its first arg, so just take keys from condition_dict dictionary
          logging.warning("ABOUT TO GET CONDITION TABLE ")
          condition_table = get_table(list(condition_dict.keys()),movie_schema)
@@ -928,7 +773,7 @@ class action_condition_by_movie_ordered(Action):
             sort_direction_ascending = False
          result = result_pre_sort.sort_values(by = [slot_dict["rank_axis"]],ascending=sort_direction_ascending)[slot_dict["ranked_col"]]
          if len(result) > 0:
-            output_result(dispatcher,result)
+            output_result(dispatcher,result,slot_dict["row_range"])
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
@@ -938,7 +783,8 @@ class action_condition_by_movie_ordered(Action):
          dispatcher.utter_message("query generated error - please continue with next query")
       logging.warning("COMMENT: end of transmission FM")
       
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      #return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
 
 
@@ -976,7 +822,7 @@ class action_condition_by_movie(Action):
          # output result
          logging.warning("result is "+str(result))
          if len(result) > 0:
-            output_result(dispatcher,result)
+            output_result(dispatcher,result,slot_dict["row_range"])
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
@@ -987,7 +833,9 @@ class action_condition_by_movie(Action):
       logging.warning("COMMENT: end of transmission")
       
       # TODO more elegant way to clear out used slots
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      #return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None), SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
+
 
 class action_clear_slots(Action):
    """debug action from active chat to flush slots after failed query - otherwise bad slot values hang around and mess up subsequent queries"""
@@ -995,9 +843,9 @@ class action_clear_slots(Action):
       return "action_clear_slots"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       logging.warning("IN CLEAR SLOTS")
-      return [SlotSet("ranked_col",None),SlotSet("movie",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
-
+     
       '''
       EXAMPLE OF CONDITION LIST
       - condition_dict is {'cast_name': ['Sean Connery']}
@@ -1056,7 +904,8 @@ class action_condition_by_media(Action):
             raise
          dispatcher.utter_message("could not find media - please try another query")
       logging.warning("COMMENT: end of transmission validated")
-      return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      #return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
+      return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
 
 class action_condition_by_language(Action):

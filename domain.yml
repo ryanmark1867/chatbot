@@ -13,10 +13,7 @@ intents:
 - condition_by_movie
 - condition_by_movie_ordered
 - condition_by_media
-- condition_by_language
-- condition_by_keyword
-- condition_by_cast
-- clear_slots
+
 entities:
 - file_name
 - row_number
@@ -33,7 +30,7 @@ entities:
 - genre
 - cast_name
 - character
-- director
+- Director
 - rank_axis
 - media
 slots:
@@ -60,7 +57,13 @@ slots:
     - greater than
   condition_val:
     type: list
-  director:
+  Director:
+    type: text
+  Producer:
+    type: text
+  Editor:
+    type: text
+  Costume_Design:
     type: text
   file_name:
     type: text
@@ -155,6 +158,4 @@ actions:
 - action_condition_by_movie
 - action_condition_by_media
 - action_condition_by_movie_ordered
-- action_condition_by_keyword
-- action_condition_by_cast
-- action_clear_slots
+
