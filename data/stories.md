@@ -21,10 +21,28 @@
 ## New Story
 * greet
     - utter_what_next
-* condition_by_movie_ordered{"ranked_col":"movies","director":"Woody Allen","rank_axis":"popularity"}
+* condition_by_movie_ordered{"ranked_col":"movies","Director":"Woody Allen","rank_axis":"popularity"}
     - slot{"ranked_col":"movies"}
-    - slot{"director":"Woody Allen"}
+    - slot{"Director":"Woody Allen"}
 	- slot{"rank_axis":"popularity"}
+    - action_condition_by_movie_ordered
+
+## New Story
+* greet
+    - utter_what_next
+* condition_by_movie_ordered{"ranked_col":"movies","row_range":"99","genre":"Thriller"}
+    - slot{"ranked_col":"movies"}
+    - slot{"row_range":"99"}
+	- slot{"genre":"Thriller"}
+    - action_condition_by_movie_ordered
+
+## New Story
+* greet
+    - utter_what_next
+* condition_by_movie_ordered{"ranked_col":"movies","row_range":"99","genre":"Science Fiction"}
+    - slot{"ranked_col":"movies"}
+    - slot{"row_range":"99"}
+	- slot{"genre":"Science Fiction"}
     - action_condition_by_movie_ordered
 
 ## New Story
@@ -43,14 +61,16 @@
     - slot{"ranked_col":"movies"}
     - slot{"year":"1996"}
     - action_condition_by_movie_ordered
+	
+
 
 
 ## New Story
 * greet
     - utter_what_next
-* condition_by_movie{"ranked_col":"movies","director":"Woody Allen"}
+* condition_by_movie{"ranked_col":"movies","Director":"Woody Allen"}
     - slot{"ranked_col":"movies"}
-    - slot{"director":"Woody Allen"}
+    - slot{"Director":"Woody Allen"}
     - action_condition_by_movie
 
 # New Story
@@ -99,9 +119,4 @@
     - action_condition_by_movie
 	
 	
-## New Story
 
-* greet
-    - utter_what_next
-* clear_slots
-    - action_clear_slots	
