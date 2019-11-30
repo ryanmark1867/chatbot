@@ -160,9 +160,12 @@ for file in path_dict:
       if big_files:
          big_folder = "bigpickle\\"
          read_handle = big_folder+str(file)
+         logging.warning("read_handle is: "+str(read_handle))
       else:
          small_folder = "smallpickle\\"
          read_handle =  small_folder+str(file)
+         read_handle = big_folder+str(file)
+         logging.warning("read_handle is: "+str(read_handle))
       df_dict[file] = pd.read_pickle(str(read_handle))
    else:
       logging.warning("path is : "+str(path_dict[file]))
@@ -204,9 +207,11 @@ if saved_files:
          if big_files:
             big_folder = "bigpickle\\"
             read_handle = big_folder+str(file)+"_"+str(cols)
+            logging.warning("JSON read_handle is: "+str(read_handle))
          else:
             small_folder = "smallpickle\\"
             read_handle =  small_folder+str(file)+"_"+str(cols)
+            logging.warning("JSON read_handle is: "+str(read_handle))
          new_handle =  str(file)+"_"+str(cols)
          logging.warning("loading df from pickle file for : "+new_handle)
          df_dict[new_handle] = pd.read_pickle(str(read_handle))
@@ -583,11 +588,27 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
             # TODO: need to handle list of conditions properly - currently OR for a list
             if isinstance(condition_dict[condition], list):
                logging.warning("in single table condition loop got a list for base_df[condition]  "+str(base_df[condition]))
-               base_df = base_df[base_df[condition].isin(condition_dict[condition])]
+               #base_df = base_df[base_df[condition].isin(condition_dict[condition])]
+               # map(lambda x:x.lower(),["A","B","C"])  map(lambda x:x.lower(),condition_dict[condition])
+               base_df = base_df[(base_df[condition].str.lower()).isin(map(lambda x:x.lower(),condition_dict[condition]))]
             else:
                #base_df = base_df[base_df[condition] == str(condition_dict[condition])]
                logging.warning("in single table condition loop not a list for base_df[condition]  "+str(base_df[condition]))
-               base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
+               # base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
+               base_df = base_df[base_df[condition].str.lower()==(str(condition_dict[condition]).lower())]
+               if len(base_df) == 0:
+                  # try fuzzy match
+                  base_df = base_df[(base_df[condition].str.lower()).str.contains(str(condition_dict[condition]).lower())]
+               '''
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.lower()==str(sub_condition).lower()][condition_columns_to_pull]
+                  if len(sub_condition_df_dict[sub_condition]) == 0:
+                     # if no exact match try for fuzzy match
+                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].str.lower()).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
+                     #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
+               '''
+
+
+               
          logging.warning("RESULT IS "+str(base_df[slot_dict["ranked_col"]]))
          result_col_list = slot_dict["ranked_col"]
          # check if the rank_axis column needs to be ncluded
@@ -613,7 +634,14 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                # iterate through each element in the condition value list getting a df of matching child keys
                for sub_condition in condition_dict[condition]:
                   logging.warning("sub_condition is "+str(sub_condition))
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
+                  # sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.lower()==str(sub_condition).lower()][condition_columns_to_pull]
+                  if len(sub_condition_df_dict[sub_condition]) == 0:
+                     # if no exact match try for fuzzy match
+                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].str.lower()).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
+                     #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
+
+               
                   logging.warning("sub_condition_df_dict[sub_condition] len is "+str(len(sub_condition_df_dict[sub_condition])))
                   logging.warning("sub_condition_df_dict[sub_condition] is "+str(sub_condition_df_dict[sub_condition]))
                logging.warning("sub_condition_df_dict len is "+str(len(sub_condition_df_dict)))
@@ -632,7 +660,11 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                # condition is not a list
                logging.warning("in multi table condition loop for not list condition "+str(condition))
                # build df that just contains child_keys for this
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
+               # child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
+               child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).str.lower() == str(condition_dict[condition]).lower()][condition_columns_to_pull]
+               if len(child_key_df_dict[condition]) == 0:
+                  child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).str.lower().str.contains(str(condition_dict[condition]).lower())][condition_columns_to_pull]
+               
                logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
          for condition in condition_table:
             # iteratively merge child key tables
@@ -878,7 +910,13 @@ class action_condition_by_media(Action):
             img = "https://www.youtube.com/watch?v=gYnRmfgKAbg"
             logging.warning("ready Mick?")
          else:
-            poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.contains(slot_dict['movie'])]['poster_path']
+            logging.warning("not a video "+str(slot_dict['movie']))
+            #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].str.lower())]['poster_path']
+            poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
+            if len(poster_file) == 0:
+               # if no exact match try for fuzzy match
+               poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
+               #poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
             logging.warning("poster_file is "+str(poster_file.iloc[0]))
             img = image_path+str(poster_file.iloc[0])
          logging.warning("img is "+str(img))
@@ -897,6 +935,53 @@ class action_condition_by_media(Action):
             
             logging.warning("about to utter_custom_json for "+str(tracker.get_latest_input_channel()))
             dispatcher.utter_custom_json(message)
+            fb_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            '''
+            message2 = {
+                "attachment":{
+                  "type":"template",
+                  "payload":{
+                    "template_type":"generic",
+                    "elements":[
+                       {
+                        "title":"Critical details for Karma AI leadership team eyes only",
+                         "default_action": {
+                         "type": "web_url",
+                          "url": fb_url,
+                          "messenger_extensions": True,
+                          "fallback_url": fb_url
+                        },
+                        "buttons":[
+                          {
+                            "type":"web_url",
+                            "title": "open link",
+                            "url":fb_url
+                          }              
+                        ]      
+                      }
+                    ]
+                  }
+             }
+            }'''
+
+            message3 = {
+                  "attachment": {
+                    "type": "template",
+                    "payload": {
+                      "template_type": "button",
+                      "text": "Test link from button in FM",
+                      "buttons": [
+                        {
+                          "type": "web_url",
+                          "url": fb_url,
+                          "title": "Click here"
+                        }
+                      ]
+                    }
+                  }
+                }
+                        
+            dispatcher.utter_custom_json(message3)
          else:
             dispatcher.utter_message(img)
       except:

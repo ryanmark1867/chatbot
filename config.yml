@@ -3,8 +3,15 @@
 # replace "supervised_embeddings" pipeline with its individual components
 language: en
 #pipeline: supervised_embeddings
+#
+#pipeline:
+#  - name: "WhitespaceTokenizer"
+#    case_sensitive: false
+#
+#
 pipeline:
   - name: "WhitespaceTokenizer"
+    case_sensitive: false
   - name: "RegexFeaturizer"
   - name: "CRFEntityExtractor"
   - name: "EntitySynonymMapper"
