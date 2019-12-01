@@ -20,6 +20,7 @@ import itertools
 import numbers
 import decimal
 import collections
+import string
 from collections import Counter
 
 # define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
@@ -42,9 +43,8 @@ avg_cols = ['rating']
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 
-# TODO figure out that even after setting logging level to debug, debug logging doesn't appear in the output
-# for now, just keep warning messages for basic logging
-logging.basicConfig(level=logging.DEBUG)
+# switch to change the debug level - change to ERROR for faster runs
+logging.getLogger().setLevel(logging.WARNING)
 logging.warning("logging check")
 
 class Condition:
@@ -105,7 +105,7 @@ json_dict['keywords'] = ['keywords']
 slot_map = dict.fromkeys(['movies','movie name','movie','title','original_title'],'original_title')
 slot_map.update(dict.fromkeys(['plot','plot summary','plot statement','overview','story','Story','Plot'],'overview'))
 slot_map.update(dict.fromkeys(['release date','release_date'],'release_date'))
-slot_map.update(dict.fromkeys(['year','when'],'year'))
+slot_map.update(dict.fromkeys(['year','when','date','Date','Year'],'year'))
 slot_map.update(dict.fromkeys(['French'],'fr'))
 slot_map.update(dict.fromkeys(['English'],'en'))
 slot_map.update(dict.fromkeys(['German'],'de'))
@@ -566,6 +566,10 @@ def get_key_column(table):
    else:
       return_key = child_key
    return(return_key)
+
+def prep_compare(string_in):
+   ''' perform case, punctuation removal required to have valid comparison of slot values from Rasa and values from the database'''
+   return(string_in.lower().translate(str.maketrans(string.punctuation, ' '*len(string.punctuation))))
    
 def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher):
    ''' main function to compile and execute query to iteratively select and join to get result set'''
@@ -588,24 +592,19 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
             # TODO: need to handle list of conditions properly - currently OR for a list
             if isinstance(condition_dict[condition], list):
                logging.warning("in single table condition loop got a list for base_df[condition]  "+str(base_df[condition]))
-               #base_df = base_df[base_df[condition].isin(condition_dict[condition])]
-               # map(lambda x:x.lower(),["A","B","C"])  map(lambda x:x.lower(),condition_dict[condition])
-               base_df = base_df[(base_df[condition].str.lower()).isin(map(lambda x:x.lower(),condition_dict[condition]))]
+               # nov 30 base_df = base_df[(base_df[condition].str.lower()).isin(map(lambda x:x.lower(),condition_dict[condition]))]
+               base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).isin(map(lambda x:x.lower(),condition_dict[condition]))]
             else:
                #base_df = base_df[base_df[condition] == str(condition_dict[condition])]
                logging.warning("in single table condition loop not a list for base_df[condition]  "+str(base_df[condition]))
                # base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
-               base_df = base_df[base_df[condition].str.lower()==(str(condition_dict[condition]).lower())]
-               if len(base_df) == 0:
+               temp_df = base_df[base_df[condition].apply(lambda x: prep_compare(x))==(str(condition_dict[condition]).lower())]
+               if len(temp_df) == 0:
                   # try fuzzy match
-                  base_df = base_df[(base_df[condition].str.lower()).str.contains(str(condition_dict[condition]).lower())]
-               '''
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.lower()==str(sub_condition).lower()][condition_columns_to_pull]
-                  if len(sub_condition_df_dict[sub_condition]) == 0:
-                     # if no exact match try for fuzzy match
-                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].str.lower()).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
-                     #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
-               '''
+                  logging.warning("trying fuzzy match for  "+str(base_df[condition]))
+                  base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(str(condition_dict[condition]).lower())]
+               else:
+                  base_df = temp_df
 
 
                
@@ -635,10 +634,10 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                for sub_condition in condition_dict[condition]:
                   logging.warning("sub_condition is "+str(sub_condition))
                   # sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.lower()==str(sub_condition).lower()][condition_columns_to_pull]
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))==str(sub_condition).lower()][condition_columns_to_pull]
                   if len(sub_condition_df_dict[sub_condition]) == 0:
                      # if no exact match try for fuzzy match
-                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].str.lower()).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
+                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
                      #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
 
                
@@ -661,9 +660,9 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                logging.warning("in multi table condition loop for not list condition "+str(condition))
                # build df that just contains child_keys for this
                # child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).str.lower() == str(condition_dict[condition]).lower()][condition_columns_to_pull]
+               child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)) == str(condition_dict[condition]).lower()][condition_columns_to_pull]
                if len(child_key_df_dict[condition]) == 0:
-                  child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).str.lower().str.contains(str(condition_dict[condition]).lower())][condition_columns_to_pull]
+                  child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)).str.contains(str(condition_dict[condition]).lower())][condition_columns_to_pull]
                
                logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
          for condition in condition_table:
@@ -892,12 +891,17 @@ class action_clear_slots(Action):
       ranked_table is ['movies']
       '''
       
+
+   
+
 class action_condition_by_media(Action):
    """return the values from movie table"""
    def name(self) -> Text:
       return "action_condition_by_media"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       logging.warning("IN CONDITION BY MEDIA")
+      raw_movie = tracker.get_slot('movie')
+      logging.warning("raw_movie is "+str(raw_movie))
       slot_dict = {}
       slot_dict = tracker.current_slot_values()
       # TODO generalize this code to deal with media in general - some kind of metadata in schema to identify media-related columns
@@ -905,17 +909,19 @@ class action_condition_by_media(Action):
       # load the media type
       media_type = media_dict[slot_dict["media"]]
       logging.warning("slot_dict['movie'] is "+str(slot_dict['movie']))
+      logging.warning("target is "+prep_compare(slot_dict['movie']))
       try:
          if slot_dict["movie"] == "Ballroom Blitz":
             img = "https://www.youtube.com/watch?v=gYnRmfgKAbg"
             logging.warning("ready Mick?")
          else:
             logging.warning("not a video "+str(slot_dict['movie']))
-            #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].str.lower())]['poster_path']
-            poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
+            # for compare ensure that lowercasing and removal of punctuation done
+            poster_file = df_dict['movies'][df_dict['movies']['original_title'].apply(lambda x: prep_compare(x)) == prep_compare(slot_dict['movie'])]['poster_path']
             if len(poster_file) == 0:
+               logging.warning("trying fuzzy match for "+prep_compare(slot_dict['movie']))
                # if no exact match try for fuzzy match
-               poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
+               poster_file = df_dict['movies'][(df_dict['movies']['original_title'].apply(lambda x: prep_compare(x))).str.contains(prep_compare(slot_dict['movie']))]['poster_path']
                #poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
             logging.warning("poster_file is "+str(poster_file.iloc[0]))
             img = image_path+str(poster_file.iloc[0])
