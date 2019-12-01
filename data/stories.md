@@ -12,6 +12,11 @@
     - slot{"movie":"Harry Meet Sally"}
     - action_condition_by_media
 
+## New Story
+* condition_by_media{"media":"poster","movie":"Margaret's Museum"}
+    - slot{"media":"poster"}
+    - slot{"movie":"Margaret's Museum"}
+    - action_condition_by_media
 
 
 ## New Story
