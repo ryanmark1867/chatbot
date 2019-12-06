@@ -598,11 +598,11 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                #base_df = base_df[base_df[condition] == str(condition_dict[condition])]
                logging.warning("in single table condition loop not a list for base_df[condition]  "+str(base_df[condition]))
                # base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
-               temp_df = base_df[base_df[condition].apply(lambda x: prep_compare(x))==(str(condition_dict[condition]).lower())]
+               temp_df = base_df[base_df[condition].apply(lambda x: prep_compare(x))== prep_compare(str(condition_dict[condition]))]
                if len(temp_df) == 0:
                   # try fuzzy match
                   logging.warning("trying fuzzy match for  "+str(base_df[condition]))
-                  base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(str(condition_dict[condition]).lower())]
+                  base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(prep_compare(str(condition_dict[condition])).lower())]
                else:
                   base_df = temp_df
 
@@ -1029,9 +1029,3 @@ class action_condition_by_language(Action):
       return []
 
 # Property of KarmaAI 
-                
-
-
-
-
-   
