@@ -23,6 +23,10 @@
 - [poster](media) for [Wild at Heart](movie)
 - [poster](media) for [Wild At Heart](movie)
 - [poster](media) for [Margaret's Museum](movie)
+- [poster](media) for [Tangled](movie)
+- [Withnail & I](movie) [poster](media)
+- [poster](media) for [Withnail & I](movie)
+- [poster](media) of [Withnail & I](movie)
 - show [poster](media) of [GoldenEye](movie)
 - show [poster](media) of [Heat](movie)
 - show [poster](media) of [heat](movie)
@@ -208,6 +212,8 @@
 - [characters](ranked_col:character) played by [Sting](cast_name)
 - [characters](ranked_col:character) played by [Madonna](cast_name)
 - [characters](ranked_col:character) played by [Cher](cast_name)
+- [characters](ranked_col:character) played by [Helena Bonham Carter](cast_name)
+- [characters](ranked_col:character) played by [Lou Diamond Philips](cast_name)
 - [roles](ranked_col:character) played by [Tom Hanks](cast_name)
 - [roles](ranked_col:character) played by [Sean Connery](cast_name)
 - [roles](ranked_col:character) played by [Sting](cast_name)
@@ -282,6 +288,20 @@
 - what is the [genre](ranked_col) of [Highlander](movie)
 - [Genre](ranked_col:genre) of [Blade Runner](movie)
 - [Genre](ranked_col:genre) of [Highlander](movie)
+- [genre](ranked_col) of [Star Wars: The Force Awakens](movie)
+- [genre](ranked_col) of [Drew: The Man Behind the Poster](movie)
+- [genre](ranked_col) of [Living in the Age of Airplanes](movie)
+- [genre](ranked_col) of [Indiana Jones and the Kingdom of the Crystal Skull](movie)
+- [genre](ranked_col) of [Empire of Dreams: The Story of the Star Wars Trilogy](movie)
+- [genre](ranked_col) of [What Lies Beneath](movie)
+- [genre](ranked_col) of [One Hundred and One Nights](movie)
+- [genre](ranked_col) of [Indiana Jones and the Last Crusade](movie)
+- [genre](ranked_col) of [Indiana Jones and the Temple of Doom](movie)
+- [genre](ranked_col) of [Raiders of the Lost Ark](movie)
+- [genre](ranked_col) of [Dead Heat on a Merry-Go-Round](movie)
+- [genre](ranked_col) of [A Time for Killing](movie)
+- [genre](ranked_col) of [Withnail & I](movie)
+- [Withnail & I](movie) [genre](ranked_col)
 - List [genre](ranked_col) of [Highlander](movie)
 - What is the [genre](ranked_col) of [Highlander](movie)
 - [funny](genre:Comedy) [movies](ranked_col:movie)
@@ -315,6 +335,7 @@
 - [plot](ranked_col) of [Avatar](movie)
 - [plot](ranked_col) for [Luv](movie)
 - [plot](ranked_col) of [Luv](movie)
+- [plot](ranked_col) of [Tangled](movie)
 - [plot](ranked_col) line for [Titanic](movie)
 - what is the [plot](ranked_col) for [The Big Easy](movie)
 - [story](ranked_col:plot) for [The Big Easy](movie)
@@ -358,6 +379,20 @@
 - what [year](ranked_col) did [GoldenEye](movie) come out
 - what [year](ranked_col) did [Gone With The Wind](movie) come out
 - what [year](ranked_col) did [Three Easy Pieces](movie) come out
+- what [year](ranked_col) did [The Exorcist](movie) come out
+- what [year](ranked_col) did [Toy Story](movie) come out
+- what [year](ranked_col) did [Taxi Driver](movie) come out
+- what [year](ranked_col) did [Braveheart](movie) come out
+- what [year](ranked_col) did [GoldenEye](movie) come out
+- what [year](ranked_col) did [Gone With The Wind](movie) come out
+- what [year](ranked_col) did [Three Easy Pieces](movie) come out
+- what [year](ranked_col) was [The Exorcist](movie) released
+- what [year](ranked_col) was [Toy Story](movie) released
+- what [year](ranked_col) was [Taxi Driver](movie) released
+- what [year](ranked_col) was [Braveheart](movie) released
+- what [year](ranked_col) was [GoldenEye](movie) released
+- what [year](ranked_col) was [Gone With The Wind](movie) released
+- what [year](ranked_col) was [Three Easy Pieces](movie) released
 - what [year](ranked_col) did [The Exorcist](movie) come out
 - what [year](ranked_col) did [Toy Story](movie) come out
 - what [year](ranked_col) did [Taxi Driver](movie) come out
