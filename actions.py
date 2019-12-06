@@ -928,6 +928,7 @@ class action_condition_by_media(Action):
          logging.warning("img is "+str(img))
          logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel()))
          logging.warning("media_type is "+str(media_type))
+         mess4_payload = "plot for "+str(slot_dict['movie'])
          # special incantation required to get a graphic to display - none of the 3 other half-baked recommendations worked
          if tracker.get_latest_input_channel() == 'facebook':
             message = {
@@ -986,8 +987,24 @@ class action_condition_by_media(Action):
                     }
                   }
                 }
+            message4 = {
+               "attachment": {
+                    "type": "template",
+                    "payload": {
+                      "template_type": "button",
+                      "text": "Test rasa payload button in FM",
+                      "buttons": [
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload,
+                          "title": "click to get plot"
+                        }
+                      ]
+                    }
+                  }
+                }
                         
-            dispatcher.utter_custom_json(message3)
+            dispatcher.utter_custom_json(message4)
          else:
             dispatcher.utter_message(img)
       except:
