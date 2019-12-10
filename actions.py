@@ -13,6 +13,7 @@ from typing import Any, Text, Dict, List
 from rasa_core_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
 import pandas as pd
+import re
 import ast
 import json
 import logging
@@ -35,7 +36,7 @@ save_files = False
 # switch to load from serialized dataframes
 saved_files = True
 # switch to allow exceptions in try blocks to be exposed
-debug_on = False
+debug_on = True
 # limit output to a reasonable number if there are lots
 output_limit = 10
 big_files = True
@@ -284,6 +285,10 @@ def create_crew_by_job_dfs(credits_df,df_dict):
 # main prep code block
 df_dict = create_crew_by_job_dfs(df_dict['credits_crew'],df_dict)
 movie_schema = load_schema_dict(df_dict)
+# df.to_csv(file_name, sep='\t')
+# csv_file_name = 'C:\personal\chatbot_july_2019\df_to_csv\movies_genres.csv'
+# logging.warning("about to write genre to csv")
+# df_dict['movies_genres'].to_csv(csv_file_name)
 
 def get_image_path(image_file):
    # TODO replace with code that gets the actual base path
@@ -569,7 +574,9 @@ def get_key_column(table):
 
 def prep_compare(string_in):
    ''' perform case, punctuation removal required to have valid comparison of slot values from Rasa and values from the database'''
-   return(string_in.lower().translate(str.maketrans(string.punctuation, ' '*len(string.punctuation))))
+   string_out = string_in.lower().translate(str.maketrans(string.punctuation, ' '*len(string.punctuation)))
+   return(re.sub(' +', ' ', string_out))
+   
    
 def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispatcher):
    ''' main function to compile and execute query to iteratively select and join to get result set'''
@@ -598,11 +605,11 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                #base_df = base_df[base_df[condition] == str(condition_dict[condition])]
                logging.warning("in single table condition loop not a list for base_df[condition]  "+str(base_df[condition]))
                # base_df = base_df[base_df[condition].str.contains(str(condition_dict[condition]))]
-               temp_df = base_df[base_df[condition].apply(lambda x: prep_compare(x))== prep_compare(str(condition_dict[condition]))]
+               temp_df = base_df[base_df[condition].apply(lambda x: prep_compare(x))== str(prep_compare(condition_dict[condition]))]
                if len(temp_df) == 0:
                   # try fuzzy match
                   logging.warning("trying fuzzy match for  "+str(base_df[condition]))
-                  base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(prep_compare(str(condition_dict[condition])).lower())]
+                  base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(str(prep_compare(condition_dict[condition])).lower())]
                else:
                   base_df = temp_df
 
@@ -629,15 +636,16 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
             if isinstance(condition_dict[condition], list):
                # TODO complete logic for dealing with conditions that are lists
                logging.warning("condition_dict is a list "+str(condition))
+               logging.warning("condition_dict prepped is "+str(prep_compare(condition)))
                sub_condition_df_dict = {}
                # iterate through each element in the condition value list getting a df of matching child keys
                for sub_condition in condition_dict[condition]:
                   logging.warning("sub_condition is "+str(sub_condition))
                   # sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].str.contains(sub_condition)][condition_columns_to_pull]
-                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))==str(sub_condition).lower()][condition_columns_to_pull]
+                  sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))==str(prep_compare(sub_condition))][condition_columns_to_pull]
                   if len(sub_condition_df_dict[sub_condition]) == 0:
                      # if no exact match try for fuzzy match
-                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))).str.contains(str(sub_condition).lower())][condition_columns_to_pull]
+                     sub_condition_df_dict[sub_condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition].apply(lambda x: prep_compare(x))).str.contains(str(prep_compare(sub_condition)))][condition_columns_to_pull]
                      #poster_file = df_dict['movies'][(df_dict['movies']['original_title'].str.lower()).str.contains(slot_dict['movie'].lower())]['poster_path']
 
                
@@ -660,9 +668,9 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                logging.warning("in multi table condition loop for not list condition "+str(condition))
                # build df that just contains child_keys for this
                # child_key_df_dict[condition] = df_dict[condition_table[condition]][df_dict[condition_table[condition]][condition] == condition_dict[condition]][condition_columns_to_pull]
-               child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)) == str(condition_dict[condition]).lower()][condition_columns_to_pull]
+               child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)) == str(prep_compare(condition_dict[condition]))][condition_columns_to_pull]
                if len(child_key_df_dict[condition]) == 0:
-                  child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)).str.contains(str(condition_dict[condition]).lower())][condition_columns_to_pull]
+                  child_key_df_dict[condition] = df_dict[condition_table[condition]][(df_dict[condition_table[condition]][condition]).apply(lambda x: prep_compare(x)).str.contains(str(prep_compare(condition_dict[condition])))][condition_columns_to_pull]
                
                logging.warning("number of rows in child_key_df "+str(len(child_key_df_dict[condition].index)))
          for condition in condition_table:
@@ -928,7 +936,10 @@ class action_condition_by_media(Action):
          logging.warning("img is "+str(img))
          logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel()))
          logging.warning("media_type is "+str(media_type))
-         mess4_payload = "plot for "+str(slot_dict['movie'])
+         mess4_payload_plot = "plot for "+str(slot_dict['movie'])
+         mess4_payload_stars = "stars of "+str(slot_dict['movie'])
+         mess4_payload_director = "director of "+str(slot_dict['movie'])
+         mess4_payload_rating = "rating for "+str(slot_dict['movie'])
          # special incantation required to get a graphic to display - none of the 3 other half-baked recommendations worked
          if tracker.get_latest_input_channel() == 'facebook':
             message = {
@@ -987,6 +998,7 @@ class action_condition_by_media(Action):
                     }
                   }
                 }
+            # test payload standard buttons
             message4 = {
                "attachment": {
                     "type": "template",
@@ -996,15 +1008,133 @@ class action_condition_by_media(Action):
                       "buttons": [
                         {
                           "type": "postback",
-                          "payload": mess4_payload,
+                          "payload": mess4_payload_plot,
                           "title": "click to get plot"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_stars,
+                          "title": "click to get stars"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director"
                         }
                       ]
                     }
                   }
                 }
+            # test side by side buttons
+            message5 = {
+               
+                      "text": "What do you want next?",
+                      "quick_replies": [
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_plot,
+                          "title": " ",
+                          "image_url":"https://github.com/ryanmark1867/chatbot/raw/master/images/thumb_up.jpg"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_stars,
+                          "title": " ",
+                          "image_url":"https://github.com/ryanmark1867/chatbot/raw/master/images/thumb_down.jpg"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_plot,
+                          "title": "click to get plot2"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_stars,
+                          "title": "click to get stars2"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director2"
+                        },
+                        {
+                           "content_type": "text",
+                          "payload": mess4_payload_plot,
+                          "title": "click to get plot3"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_stars,
+                          "title": "click to get stars3"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director3"
+                        },
+                        {
+                           "content_type": "text",
+                          "payload": mess4_payload_plot,
+                          "title": "click to get plot4"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_stars,
+                          "title": "click to get stars4"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director4"
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": mess4_payload_rating,
+                          "title": "click to get rating"
+                        }
+                      ]
+                    }
+               
+            '''
+               message4 = {
+               "attachment": {
+                    "type": "template",
+                    "payload": {
+                      "template_type": "button",
+                      "text": "Test rasa payload button in FM",
+                      "buttons": [
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_plot,
+                          "title": "click to get plot"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_stars,
+                          "title": "click to get stars"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_director,
+                          "title": "click to get director"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": mess4_payload_rating,
+                          "title": "click to get rating"
+                        }
+                      ]
+                    }
+                  }
+                }
+                '''
                         
-            dispatcher.utter_custom_json(message4)
+            dispatcher.utter_custom_json(message5)
          else:
             dispatcher.utter_message(img)
       except:
