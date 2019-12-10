@@ -301,6 +301,7 @@
 - [genre](ranked_col) of [Dead Heat on a Merry-Go-Round](movie)
 - [genre](ranked_col) of [A Time for Killing](movie)
 - [genre](ranked_col) of [Withnail & I](movie)
+- [genre](ranked_col) of [42](movie)
 - [Withnail & I](movie) [genre](ranked_col)
 - List [genre](ranked_col) of [Highlander](movie)
 - What is the [genre](ranked_col) of [Highlander](movie)
@@ -327,12 +328,14 @@
 - what is the [plot](ranked_col) for [Toy Story](movie)
 - [plot](ranked_col) for [Titanic](movie)
 - [plot](ranked_col) for [Thunderball](movie)
+- [plot](ranked_col) for [42](movie)
 - [story](ranked_col:plot) for [Titanic](movie)
 - [story](ranked_col:plot) of [Titanic](movie)
 - [plot](ranked_col) for [Titanic](movie)
 - [plot](ranked_col) of [Titanic](movie)
 - [plot](ranked_col) for [Avatar](movie)
 - [plot](ranked_col) of [Avatar](movie)
+- [plot](ranked_col) of [42](movie)
 - [plot](ranked_col) for [Luv](movie)
 - [plot](ranked_col) of [Luv](movie)
 - [plot](ranked_col) of [Tangled](movie)
@@ -393,6 +396,8 @@
 - what [year](ranked_col) was [GoldenEye](movie) released
 - what [year](ranked_col) was [Gone With The Wind](movie) released
 - what [year](ranked_col) was [Three Easy Pieces](movie) released
+- what [year](ranked_col) was [Shopping](movie) released
+- what [year](ranked_col) was [The Godfather](movie) released
 - what [year](ranked_col) did [The Exorcist](movie) come out
 - what [year](ranked_col) did [Toy Story](movie) come out
 - what [year](ranked_col) did [Taxi Driver](movie) come out
