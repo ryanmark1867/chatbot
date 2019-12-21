@@ -82,6 +82,11 @@ else:
    path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
    path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
 image_path = 'https://image.tmdb.org/t/p/w500'
+image_path_dict = {}
+image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92'
+image_path_dict["medium"] = 'https://image.tmdb.org/t/p/w342'
+image_path_dict["big"] = 'https://image.tmdb.org/t/p/w500'
+
 
 media_dict = {}
 media_dict['poster'] = 'image'
@@ -285,6 +290,40 @@ def create_crew_by_job_dfs(credits_df,df_dict):
 # main prep code block
 df_dict = create_crew_by_job_dfs(df_dict['credits_crew'],df_dict)
 movie_schema = load_schema_dict(df_dict)
+
+import requests
+
+headers = {
+    'Content-Type': 'application/json'
+}
+
+params = (
+    ('access_token', "EAAKrBDkZCQtgBAHnWHM5q24XbgXJQrwKcr4WAt1FE8OBWI7vZCS3jBBVX5BXm0XmBLjrNgEyU4Glwdhd49B7wAKLtYgMZAb9PikX6JZCMk4FrXl6hSUPbRdkSUJOitjpiPl6BA2Szx0oAJrE5A94oxGSAMxTNsecRnq9tzMGJQZDZD"
+   ),
+)
+
+data = {  "greeting":
+   [
+      {      "locale":"default",
+             "text":"Hello!"     },
+      {     "locale":"en_US", "text":"Timeless apparel for the masses."
+            }
+      ]
+   }
+
+# response = requests.post('https://graph.facebook.com/v2.6/me/messenger_profile', headers=headers, params=params, data=data)
+
+# response = requests.post('https://graph.facebook.com/v2.6/me/messenger_profile?access_token=EAAKrBDkZCQtgBAHnWHM5q24XbgXJQrwKcr4WAt1FE8OBWI7vZCS3jBBVX5BXm0XmBLjrNgEyU4Glwdhd49B7wAKLtYgMZAb9PikX6JZCMk4FrXl6hSUPbRdkSUJOitjpiPl6BA2Szx0oAJrE5A94oxGSAMxTNsecRnq9tzMGJQZDZD', headers=headers, data=data)
+
+response = requests.post('https://graph.facebook.com/v2.6/me/messenger_profile', headers=headers,params = params, data=data)
+#                         ?access_token=EAAKrBDkZCQtgBAHnWHM5q24XbgXJQrwKcr4WAt1FE8OBWI7vZCS3jBBVX5BXm0XmBLjrNgEyU4Glwdhd49B7wAKLtYgMZAb9PikX6JZC
+#                         Mk4FrXl6hSUPbRdkSUJOitjpiPl6BA2Szx0oAJrE5A94oxGSAMxTNsecRnq9tzMGJQZDZD', headers=headers, data=data)
+
+
+logging.warning("response: "+str(response))
+
+
+
 # df.to_csv(file_name, sep='\t')
 # csv_file_name = 'C:\personal\chatbot_july_2019\df_to_csv\movies_genres.csv'
 # logging.warning("about to write genre to csv")
@@ -610,6 +649,7 @@ def generate_result(slot_dict,condition_dict,condition_table,ranked_table,dispat
                   # try fuzzy match
                   logging.warning("trying fuzzy match for  "+str(base_df[condition]))
                   base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).str.contains(str(prep_compare(condition_dict[condition])).lower())]
+                  # base_df = base_df[prep_compare(condition_dict[condition]) in base_df[condition].apply(lambda x: prep_compare(x))]
                else:
                   base_df = temp_df
 
@@ -933,6 +973,8 @@ class action_condition_by_media(Action):
                #poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
             logging.warning("poster_file is "+str(poster_file.iloc[0]))
             img = image_path+str(poster_file.iloc[0])
+            img_small = image_path_dict["small"]+str(poster_file.iloc[0])
+            img_medium = image_path_dict["medium"]+str(poster_file.iloc[0])
          logging.warning("img is "+str(img))
          logging.warning("latest_input_channel "+str(tracker.get_latest_input_channel()))
          logging.warning("media_type is "+str(media_type))
@@ -940,6 +982,8 @@ class action_condition_by_media(Action):
          mess4_payload_stars = "stars of "+str(slot_dict['movie'])
          mess4_payload_director = "director of "+str(slot_dict['movie'])
          mess4_payload_rating = "rating for "+str(slot_dict['movie'])
+         mess4_payload_stars = "actors in "+str(slot_dict['movie'])
+         mess4_payload_genre = "genre of "+str(slot_dict['movie'])
          # special incantation required to get a graphic to display - none of the 3 other half-baked recommendations worked
          if tracker.get_latest_input_channel() == 'facebook':
             message = {
@@ -1045,12 +1089,12 @@ class action_condition_by_media(Action):
                         {
                           "content_type": "text",
                           "payload": mess4_payload_director,
-                          "title": "click to get director"
+                          "title": "click to get *director*"
                         },
                         {
                           "content_type": "text",
                           "payload": mess4_payload_plot,
-                          "title": "click to get plot2"
+                          "title": "click to get *plot2*"
                         },
                         {
                           "content_type": "text",
@@ -1100,41 +1144,59 @@ class action_condition_by_media(Action):
                       ]
                     }
                
-            '''
-               message4 = {
-               "attachment": {
-                    "type": "template",
-                    "payload": {
-                      "template_type": "button",
-                      "text": "Test rasa payload button in FM",
-                      "buttons": [
-                        {
-                          "type": "postback",
-                          "payload": mess4_payload_plot,
-                          "title": "click to get plot"
-                        },
-                        {
-                          "type": "postback",
-                          "payload": mess4_payload_stars,
-                          "title": "click to get stars"
-                        },
-                        {
-                          "type": "postback",
-                          "payload": mess4_payload_director,
-                          "title": "click to get director"
-                        },
-                        {
-                          "type": "postback",
-                          "payload": mess4_payload_rating,
-                          "title": "click to get rating"
-                        }
-                      ]
-                    }
+            
+            message6 =  {
+                   "attachment":{
+                     "type":"template",
+                     "payload":{
+                       "template_type":"generic",
+                       "elements":[
+                          {
+                           "title":str(slot_dict['movie']),
+                           "image_url":img,
+                           "subtitle":"Click below for more details",
+                           "buttons":[
+                          {
+                              "type": "postback",
+                              "payload": mess4_payload_director,
+                              "title": "Director"                            
+                           },
+                          {
+                              "type": "postback",
+                              "payload": mess4_payload_stars,
+                              "title": "Stars"                            
+                           },{
+                              "type": "postback",
+                              "payload": mess4_payload_genre,
+                              "title": "Genre"
+                           }]},
+                          {
+                           "title":str(slot_dict['movie']),
+                           "image_url":img,
+                           "subtitle":"Click below for more details2",
+                           "buttons":[
+                          {
+                              "type": "postback",
+                              "payload": mess4_payload_director,
+                              "title": "Director2"                            
+                           },
+                          {
+                              "type": "postback",
+                              "payload": mess4_payload_stars,
+                              "title": "Stars2"                            
+                           },{
+                              "type": "postback",
+                              "payload": mess4_payload_genre,
+                              "title": "Genre2"
+                           }
+                            
+                        ]      
+                      }
+                    ]
                   }
                 }
-                '''
-                        
-            dispatcher.utter_custom_json(message5)
+              }        
+            dispatcher.utter_custom_json(message6)
          else:
             dispatcher.utter_message(img)
       except:
@@ -1144,6 +1206,35 @@ class action_condition_by_media(Action):
       logging.warning("COMMENT: end of transmission validated")
       #return [SlotSet("ranked_col",None),SlotSet("character",None),SlotSet("movie",None),SlotSet("media",None),SlotSet("rank_axis",None),SlotSet("keyword",None),SlotSet("year",None),SlotSet("genre",None),SlotSet("plot",None),SlotSet("Director",None),SlotSet("cast_name",None)]
       return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
+
+
+# set FM welcome screen text
+class action_welcome_page(Action):
+   """invoke FM welcome page"""
+   def name(self) -> Text:
+      return "action_welcome_page"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      logging.warning("COMMENT: got a welcome_page")
+      dispatcher.utter_message("Hello <<Name>> I'm Movie Molly. I know a lot about movies. Ask me something")
+      return[]
+
+
+   '''
+"Content-Type: application/json" -d '{
+  "greeting": [
+    {
+      "locale":"default",
+      "text":"Hello!" 
+    }, {
+      "locale":"en_US",
+      "text":"Timeless apparel for the masses."
+    }
+  ]
+}' "https://graph.facebook.com/v2.6/me/messenger_profile?access_token=<PAGE_ACCESS_TOKEN>"
+
+'''
+
+
 
 
 class action_condition_by_language(Action):
