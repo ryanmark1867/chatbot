@@ -32,6 +32,8 @@ child_key = 'movie_id'
 parent_table = 'movies'
 default_rank = 'popularity'
 default_ranked_col = 'original_title'
+# maximum number of FM quick responses
+max_qr = 13
 # switch to serialize dataframes
 save_files = False
 # switch to load from serialized dataframes
@@ -254,6 +256,18 @@ credits_cast is ['cast_id', 'character', 'credit_id', 'gender', 'id', 'name', 'o
 credits_crew is ['credit_id', 'department', 'gender', 'id', 'job', 'name', 'profile_path', 'movie_id']
 keywords_keywords is ['id', 'name', 'movie_id']
 '''
+
+# define category_table_dict dictionary of dataframes indexed by category name
+category_table_dict = {}
+category_table_dict['genre'] = df_dict['movies_genres']
+category_table_dict['production_company'] = df_dict['movies_production_companies']
+category_table_dict['production_country'] = df_dict['movies_production_countries']
+category_table_dict['spoken_language'] = df_dict['movies_spoken_languages']
+category_table_name = {}
+category_table_name['genre'] = 'genre'
+category_table_name['production_company'] = 'movies_production_company'
+category_table_name['production_country'] = 'movies_production_country'
+category_table_name['spoken_language'] = 'movies_language'
 
 # rename some columns to avoid duplicates
 df_dict['movies_genres'].rename({'name':'genre_name'},axis=1,inplace=True)
@@ -940,8 +954,49 @@ class action_clear_slots(Action):
       ranked_table is ['movies']
       '''
       
+class action_list_category(Action):
+   """for a given category, show quick responses for the category labels"""
+   def name(self) -> Text:
+      return "action_list_category"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      logging.warning("IN ACTION LIST CATEGORY")
+      category = tracker.get_slot('category')
+      category_table = category_table_dict[category]
+      logging.warning("category is "+str(category))
+      logging.warning("category_table is "+str(category_table))
+      # get unique values in the name column of the category_table
+      # a = df['A'].unique()
+      col_name = category_table_name[category]+"_name"
+      logging.warning("col_name is "+str(col_name))
+      category_values = category_table[col_name].unique()
+      logging.warning("category_values are "+str(category_values))
+      # build
+      i = 0
+      qr_list = []
+      for value in category_values:
+         payload_text = "top "+value+" movies"
+         logging.warning("payload_text is "+payload_text)
+         qr_list.append({"content_type":"text",
+                       "payload": payload_text,
+                       "title": value})
+         i = i+1
+         if i >= max_qr:
+            break
+      list_category_text = "select "+category
+      list_category_message = {               
+                      "text": list_category_text,
+                      "quick_replies": qr_list
+                      }
+      logging.warning("list_category_message is "+str(list_category_message))
+      dispatcher.utter_custom_json(list_category_message)  
+      
+      return[]
+
+
+
+
 class action_welcome_page(Action):
-   """invoke FM welcome page"""
+   """welcome responses after initial FM page"""
    def name(self) -> Text:
       return "action_welcome_page"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
