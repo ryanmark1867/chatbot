@@ -4,6 +4,12 @@
 
 
 ## New Story
+* list_category{"category":"genre"}
+    - slot{"category":"genre"}
+    - action_list_category
+
+
+## New Story
 * condition_by_movie{"ranked_col":"movies","cast_name":"Jack Lemmon"}
     - slot{"ranked_col":"movies"}
     - slot{"cast_name":"Jack Lemmon"}
@@ -21,6 +27,7 @@
     - slot{"media":"poster"}
     - slot{"movie":"Margaret's Museum"}
     - action_condition_by_media
+
 
 
 ## New Story

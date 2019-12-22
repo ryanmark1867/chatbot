@@ -13,6 +13,16 @@
 - good evening
 - hey there
 
+## intent: list_category
+- list [genres](category:genre)
+- list [Genres](category:genre)
+- show [genres](category:genre)
+- list [languages](category:language)
+- show [languages](category:language)
+- show [countries](category:country)
+- list [countries](category:country)
+
+
 ## intent:condition_by_media
 - Show [poster](media) for [When Harry Met Sally](movie)
 - [poster](media) for [GoldenEye](movie)
