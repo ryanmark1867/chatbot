@@ -13,6 +13,7 @@ intents:
 - condition_by_movie
 - condition_by_movie_ordered
 - condition_by_media
+- welcome_page
 
 entities:
 - file_name
@@ -112,6 +113,10 @@ slots:
     initial_value: 5
   row_range:
     type: text
+  first_name:
+    type: text
+  last_name:
+    type: text    
   sort_col:
     type: text
     initial_value: popularity
@@ -158,4 +163,5 @@ actions:
 - action_condition_by_movie
 - action_condition_by_media
 - action_condition_by_movie_ordered
+- action_welcome_page
 

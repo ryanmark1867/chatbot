@@ -22,6 +22,7 @@ import numbers
 import decimal
 import collections
 import string
+import requests
 from collections import Counter
 
 # define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
@@ -939,6 +940,105 @@ class action_clear_slots(Action):
       ranked_table is ['movies']
       '''
       
+class action_welcome_page(Action):
+   """invoke FM welcome page"""
+   def name(self) -> Text:
+      return "action_welcome_page"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      logging.warning("IN INITIALIZE FM")
+      most_recent_state = tracker.current_state()
+      sender_id = most_recent_state['sender_id']
+      fb_access_token = "EAAKrBDkZCQtgBAPkGlFtV4VqvcSggjDV1Sf8ClnZBmYagK4ZBQHtcZB9W5sOKBZCjRjad3ZCEZBFXo6ZACmZCzFte2xDxzHrkyKFCNEjmWuZBR72ZBxkoJiZCBFUC6ZBTgGVKLPZBE3yL7IQT86hLyEvTor4F1sb6Vg8gkBMCrQVi5QfzQuQZDZD"
+      r = requests.get('https://graph.facebook.com/{}?fields=first_name,last_name,profile_pic&access_token={}'.format(sender_id, fb_access_token)).json()
+      first_name = r['first_name']
+      last_name = r['last_name']
+      conf_string = "Hello "+first_name+" I'm Movie Molly! Ask me about your favourite movie or actor,"
+      dispatcher.utter_message(conf_string)
+      genre_payload = "show genres"
+      top_rated_payload = "show top films"
+      actor_payload = "show top actors"
+      message4 = {
+               "attachment": {
+                    "type": "template",
+                    "payload": {
+                      "template_type": "button",
+                      "text": "Test rasa payload button in FM",
+                      "buttons": [
+                        {
+                          "type": "postback",
+                          "payload": genre_payload,
+                          "title": "Genre"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": top_rated_payload,
+                          "title": "Top Rated"
+                        },
+                        {
+                          "type": "postback",
+                          "payload": actor_payload,
+                          "title": "Actors"
+                        }
+                      ]
+                    }
+                  }
+                }
+      message5 = {               
+                      "text": "or select a category from the menu below ",
+                      "quick_replies": [
+                        {
+                          "content_type": "text",
+                          "payload": genre_payload,
+                          "title": "Genre"                          
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": top_rated_payload,
+                          "title": "Top Rated"                          
+                        },
+                        {
+                          "content_type": "text",
+                          "payload": actor_payload,
+                          "title": "Actors"
+                        }
+                      ]
+                    }
+      dispatcher.utter_custom_json(message5)
+      logging.warning("after buttons")
+      return [SlotSet('name', first_name), SlotSet('surname', last_name)]
+
+# persistent menu not working yet
+'''
+      message_fm =   {
+            "persistent_menu": [
+            {
+               "locale": "default",
+               "composer_input_disabled": False,
+               "call_to_actions": [
+               {
+                    "type": "postback",
+                    "title": "Genre",
+                    "payload": "list genres"
+                },
+                {
+                    "type": "postback",
+                    "title": "Top Rated",
+                    "payload": "list top rated"
+                },
+                {
+                    "type": "postback",
+                    "title": "Actors",
+                    "payload": "list actors"
+                }
+               ]
+              }
+          ]
+      }
+      
+      dispatcher.utter_custom_json(message_fm)
+'''
+  
+
 
    
 
@@ -1196,7 +1296,7 @@ class action_condition_by_media(Action):
                   }
                 }
               }        
-            dispatcher.utter_custom_json(message6)
+            dispatcher.utter_custom_json(message5)
          else:
             dispatcher.utter_message(img)
       except:
@@ -1209,6 +1309,7 @@ class action_condition_by_media(Action):
 
 
 # set FM welcome screen text
+'''
 class action_welcome_page(Action):
    """invoke FM welcome page"""
    def name(self) -> Text:
@@ -1217,22 +1318,9 @@ class action_welcome_page(Action):
       logging.warning("COMMENT: got a welcome_page")
       dispatcher.utter_message("Hello <<Name>> I'm Movie Molly. I know a lot about movies. Ask me something")
       return[]
-
-
-   '''
-"Content-Type: application/json" -d '{
-  "greeting": [
-    {
-      "locale":"default",
-      "text":"Hello!" 
-    }, {
-      "locale":"en_US",
-      "text":"Timeless apparel for the masses."
-    }
-  ]
-}' "https://graph.facebook.com/v2.6/me/messenger_profile?access_token=<PAGE_ACCESS_TOKEN>"
-
 '''
+
+
 
 
 
