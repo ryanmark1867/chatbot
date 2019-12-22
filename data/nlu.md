@@ -5,6 +5,13 @@
 - that sounds good
 - correct
 
+## intent:welcome_page
+- hey
+- hello
+- hi
+- good morning
+- good evening
+- hey there
 
 ## intent:condition_by_media
 - Show [poster](media) for [When Harry Met Sally](movie)
@@ -99,6 +106,7 @@
 - top [movies](ranked_col:movie) for [2019](year)
 - top [movies](ranked_col:movie) of [2019](year)
 - top [movies](ranked_col:movie) from [2019](year) by [popularity](rank_axis)
+- show [top](rank_axis:popularity) [films](ranked_col:movie)
 
 
 ## intent:condition_by_movie 
@@ -246,6 +254,7 @@
 - [Charlie Sheen](cast_name) [movies](ranked_col:movie)
 - [Robert Duvall](cast_name) [movies](ranked_col:movie)
 - [Meg Ryan](cast_name) [movies](ranked_col:movie)
+- [Pamela Anderson](cast_name) [movies](ranked_col:movie)
 - [Movies](ranked_col:movie) starring [Clooney](cast_name)
 - [Movies](ranked_col:movie) starring [George Clooney](cast_name)
 - [Movies](ranked_col:movie) starring [Val Kilmer](cast_name)

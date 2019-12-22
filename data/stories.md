@@ -1,3 +1,7 @@
+## happy path
+* greet
+  - action_welcome_page
+
 
 ## New Story
 * condition_by_movie{"ranked_col":"movies","cast_name":"Jack Lemmon"}
