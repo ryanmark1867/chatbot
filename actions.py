@@ -34,12 +34,13 @@ default_rank = 'popularity'
 default_ranked_col = 'original_title'
 # maximum number of FM quick responses
 max_qr = 13
+max_qr_per_row = 3
 # switch to serialize dataframes
 save_files = False
 # switch to load from serialized dataframes
 saved_files = True
 # switch to allow exceptions in try blocks to be exposed
-debug_on = True
+debug_on = False
 # limit output to a reasonable number if there are lots
 output_limit = 10
 big_files = True
@@ -89,6 +90,7 @@ image_path_dict = {}
 image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92'
 image_path_dict["medium"] = 'https://image.tmdb.org/t/p/w342'
 image_path_dict["big"] = 'https://image.tmdb.org/t/p/w500'
+wv_URL = 'http://127.0.0.1:5000'
 
 
 media_dict = {}
@@ -106,6 +108,16 @@ json_dict['links'] = []
 json_dict['movies'] = ['genres','production_companies','production_countries','spoken_languages',]
 json_dict['ratings'] = []
 json_dict['credits'] = ['cast','crew']
+'''
+score_sample = {}
+score_sample['hour'] = np.array([18])
+score_sample['Route'] = np.array([0])
+score_sample['daym'] = np.array([21])
+score_sample['month'] = np.array([0])
+score_sample['year'] = np.array([5])
+score_sample['Direction'] = np.array([1])
+score_sample['day'] = np.array([1])
+'''
 json_dict['keywords'] = ['keywords']
 
 
@@ -583,7 +595,7 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
       column_list.append(list(ranked_table.keys())[list(ranked_table.values()).index(condition_table)])
    return(column_list)
 
-def output_result(dispatcher,result,row_range):
+def output_result(dispatcher,result,row_range,tracker):
    ''' common output to bot interface and logger '''
    i = 0
    # if the range to print is None, use overall default. Otherwise use range
@@ -594,6 +606,10 @@ def output_result(dispatcher,result,row_range):
       print_limit = int(row_range)
    # check if the result df contains a column (like rating) that needs to be averaged
    avg_set = list(set(list(result)) & set(avg_cols))
+   # prep for details view
+   qr_count = 0
+   qr_list = []
+   col_list = []
    if not avg_set:
       # no average columns to calculate
       for index, row in result.iterrows():
@@ -605,17 +621,72 @@ def output_result(dispatcher,result,row_range):
          for col in result.columns:
             # don't output ID columns for final bot rendering
             if (col != parent_key and col != child_key):
+               str_raw = str(row[col])
                str_row = str_row+" "+str(row[col])+"\t"
+               # add this col to list of columns
+               col_list.append(col)
             str_row_log = str_row_log+" "+str(row[col])+"\t"
          logging.warning(str_row_log)
-         dispatcher.utter_message(str_row)
+         # check whether a simple output or details with linkable buttons
+         if tracker.get_slot('detail_mode') == 'text_list':
+            dispatcher.utter_message(str_row)
+         else:
+            # build query that the qr will trigger
+            # TODO get better than this hacky way to get year included
+            payload_text = "show details for "+str_raw
+            logging.warning("payload_text is "+payload_text)
+            t_year = df_dict['movies'][df_dict['movies']['original_title']==str_raw]
+            title_year = t_year.iloc[0]['year']
+            title_text = str_raw+" ("+str(title_year)+")"
+            logging.warning("title_text is "+title_text)
+            # build qr entry
+            qr_list.append({"content_type":"text",
+                       "payload": payload_text,
+                       "title": title_text})
+            qr_count = qr_count+1
+            if qr_count >= max_qr:
+               break
+      # if qrs being output, build remainder of json and send
+      if tracker.get_slot('detail_mode') == 'details':
+         details_text = tracker.get_slot('genre_name')+", good choice!  Here are some highly rated movies."
+         details_message = {               
+                      "text": details_text,
+                      "quick_replies": qr_list
+                      }
+         logging.warning("details_message is "+str(details_message))
+         dispatcher.utter_custom_json(details_message)
    else:
       # need to print average of columns
       for col in avg_set:
          result["avg"]=result[col].astype(float)
          logging.warning(result["avg"].mean())
          dispatcher.utter_message(str(round(result["avg"].mean(),2)))
+   
    return()
+
+'''
+      # build list of quick responses
+      i = 0
+      qr_list = []
+      for value in category_values:
+         payload_text = "top "+value+" movies"
+         logging.warning("payload_text is "+payload_text)
+         qr_list.append({"content_type":"text",
+                       "payload": payload_text,
+                       "title": value})
+         i = i+1
+         if i >= max_qr:
+            break
+      list_category_text = "select "+category
+      list_category_message = {               
+                      "text": list_category_text,
+                      "quick_replies": qr_list
+                      }
+      logging.warning("list_category_message is "+str(list_category_message))
+      dispatcher.utter_custom_json(list_category_message)  
+      # set the display mode to detailed so that the results are clickable
+      return[SlotSet('detail_mode','details')]
+'''
 
 def get_key_column(table):
    ''' return the key column for the input table'''
@@ -867,7 +938,7 @@ class action_condition_by_movie_ordered(Action):
             sort_direction_ascending = False
          result = result_pre_sort.sort_values(by = [slot_dict["rank_axis"]],ascending=sort_direction_ascending)[slot_dict["ranked_col"]]
          if len(result) > 0:
-            output_result(dispatcher,result,slot_dict["row_range"])
+            output_result(dispatcher,result,slot_dict["row_range"],tracker)
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
@@ -916,7 +987,7 @@ class action_condition_by_movie(Action):
          # output result
          logging.warning("result is "+str(result))
          if len(result) > 0:
-            output_result(dispatcher,result,slot_dict["row_range"])
+            output_result(dispatcher,result,slot_dict["row_range"],tracker)
          else:
             dispatcher.utter_message("empty result - please try another query")
       except Exception as e:
@@ -954,6 +1025,63 @@ class action_clear_slots(Action):
       ranked_table is ['movies']
       '''
       
+class action_show_details(Action):
+   """special demo action to show canned web page - TODO provide a less hacky way to do this"""
+   def name(self) -> Text:
+      return "action_show_details"
+   def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+      #
+      logging.warning("IN ACTION SHOW DETAILS")
+      raw_movie = tracker.get_slot('movie')
+      logging.warning("raw_movie is "+str(raw_movie))
+      slot_dict = {}
+      slot_dict = tracker.current_slot_values()
+      try:
+         if slot_dict["movie"] == "Ballroom Blitz":
+            img = "https://www.youtube.com/watch?v=gYnRmfgKAbg"
+            logging.warning("ready Mick?")
+         else:
+            logging.warning("not a video "+str(slot_dict['movie']))
+            # for compare ensure that lowercasing and removal of punctuation done
+            poster_file = df_dict['movies'][df_dict['movies']['original_title'].apply(lambda x: prep_compare(x)) == prep_compare(slot_dict['movie'])]['poster_path']
+            if len(poster_file) == 0:
+               logging.warning("trying fuzzy match for "+prep_compare(slot_dict['movie']))
+               # if no exact match try for fuzzy match
+               poster_file = df_dict['movies'][(df_dict['movies']['original_title'].apply(lambda x: prep_compare(x))).str.contains(prep_compare(slot_dict['movie']))]['poster_path']
+               #poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
+            logging.warning("poster_file is "+str(poster_file.iloc[0]))
+            # TODO for test need URL of this form http://127.0.0.1:5000/rhIRbceoE9lR4veEXuwCC2wARtG.jpg
+            target_URL = wv_URL+str(poster_file.iloc[0])
+            logging.warning("target_URL is "+str(target_URL))
+            message1 = {
+               "attachment": {
+                    "type": "template",
+                    "payload": {
+                      "template_type": "button",
+                      "text": "Test URL button for webview",
+                      "buttons": [
+                        {
+                           "type":"web_url",
+                           "url":target_URL,
+                           "title":"URL Button",
+                           "webview_height_ratio": "full"
+                        }
+                     ]
+                  }
+               }
+            }
+            dispatcher.utter_custom_json(message1)
+      except:
+         if debug_on:
+            raise
+         dispatcher.utter_message("could not find media for show details - please try another query")
+      logging.warning("COMMENT: end of transmission show details validated")
+      #
+      return[SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
+
+
+
+
 class action_list_category(Action):
    """for a given category, show quick responses for the category labels"""
    def name(self) -> Text:
@@ -970,7 +1098,9 @@ class action_list_category(Action):
       logging.warning("col_name is "+str(col_name))
       category_values = category_table[col_name].unique()
       logging.warning("category_values are "+str(category_values))
-      # build
+      # build list of quick responses
+      # print out max_qr_per_row per row and then send to FM
+      qr_count = 0
       i = 0
       qr_list = []
       for value in category_values:
@@ -980,17 +1110,32 @@ class action_list_category(Action):
                        "payload": payload_text,
                        "title": value})
          i = i+1
+         qr_count = qr_count+1
          if i >= max_qr:
             break
-      list_category_text = "select "+category
+      list_category_text = "Ok, "+category+". Choose one of these, or ask me about a different one."
       list_category_message = {               
                       "text": list_category_text,
                       "quick_replies": qr_list
                       }
+      dispatcher.utter_custom_json(list_category_message)
+      '''
+         if qr_count >= max_qr_per_row:
+            # output a row of QRs
+            qr_count = 0
+            list_category_text = "Ok, "+category+". Choose one of these, or ask me about a different one."
+            list_category_message = {               
+                      "text": list_category_text,
+                      "quick_replies": qr_list
+                      }
+            dispatcher.utter_custom_json(list_category_message)
+            qr_list = []
+      '''
       logging.warning("list_category_message is "+str(list_category_message))
-      dispatcher.utter_custom_json(list_category_message)  
-      
-      return[]
+        
+      # set the display mode to detailed so that the results are clickable
+      return[SlotSet('detail_mode','details'),SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
+
 
 
 
@@ -1004,10 +1149,15 @@ class action_welcome_page(Action):
       most_recent_state = tracker.current_state()
       sender_id = most_recent_state['sender_id']
       fb_access_token = "EAAKrBDkZCQtgBAPkGlFtV4VqvcSggjDV1Sf8ClnZBmYagK4ZBQHtcZB9W5sOKBZCjRjad3ZCEZBFXo6ZACmZCzFte2xDxzHrkyKFCNEjmWuZBR72ZBxkoJiZCBFUC6ZBTgGVKLPZBE3yL7IQT86hLyEvTor4F1sb6Vg8gkBMCrQVi5QfzQuQZDZD"
-      r = requests.get('https://graph.facebook.com/{}?fields=first_name,last_name,profile_pic&access_token={}'.format(sender_id, fb_access_token)).json()
+      r = requests.get('https://graph.facebook.com/{}?fields=first_name,last_name,locale,timezone,gender,profile_pic&access_token={}'.format(sender_id, fb_access_token)).json()
       first_name = r['first_name']
       last_name = r['last_name']
-      conf_string = "Hello "+first_name+" I'm Movie Molly! Ask me about your favourite movie or actor,"
+      tz_fb = r['timezone']
+      gender_fb = r['gender']
+      locale_fb = r['locale']
+      string_fb = "gender is "+str(gender_fb)+" timezone is "+str(tz_fb)+" locale is "+str(locale_fb)
+      # dispatcher.utter_message(string_fb)
+      conf_string = "Hello, "+first_name+", I'm Movie Molly! Ask me about your favourite movie or actor,"
       dispatcher.utter_message(conf_string)
       genre_payload = "show genres"
       top_rated_payload = "show top films"
