@@ -22,6 +22,12 @@
 - show [countries](category:country)
 - list [countries](category:country)
 
+## intent: show_details
+- show details for [Blade Runner](movie)
+- show details for [Heat](movie)
+- show details for [When Harry Met Sally](movie)
+- show details for [GoldenEye](movie)
+- show details for [Roger Moore](cast_name)
 
 ## intent:condition_by_media
 - Show [poster](media) for [When Harry Met Sally](movie)

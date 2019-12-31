@@ -8,6 +8,10 @@
     - slot{"category":"genre"}
     - action_list_category
 
+## New Story
+* show_details{"movie":"Blade Runner"}
+	- slot{"movie":"Blade Runner"}
+	- action_show_details
 
 ## New Story
 * condition_by_movie{"ranked_col":"movies","cast_name":"Jack Lemmon"}
