@@ -23,12 +23,70 @@ import decimal
 import collections
 import string
 import requests
+import os
 from collections import Counter
+import yaml
+
+# switch to change the debug level - change to ERROR for faster runs
+logging.getLogger().setLevel(logging.WARNING)
+logging.warning("logging check")
+
+# block to read in key parameters
+
+# get current working directory
+current_path = os.getcwd()
+logging.warning("current directory is: "+current_path)
+directory_symbol = "\\"
+
+path_to_yaml = current_path+directory_symbol+"custom_action_config.yml"
+logging.warning("path_to_yaml "+path_to_yaml)
+try: 
+    with open (path_to_yaml, 'r') as file:
+       config = yaml.safe_load(file)
+except Exception as e:
+    print('Error reading the config file')
+
+parent_key = config['general']['parent_key']
+child_key = config['general']['child_key']
+parent_table = config['general']['parent_table']
+default_rank = config['general']['default_rank']
+default_ranked_col = config['general']['default_rank_col']
+# maximum number of FM quick responses
+max_qr = config['general']['max_qr']
+max_qr_per_row = config['general']['max_qr_per_row']
+# switch to serialize dataframes
+save_files = config['general']['save_files']
+# switch to load from serialized dataframes
+saved_files = config['general']['saved_files']
+# switch to allow exceptions in try blocks to be exposed
+debug_on = config['general']['debug_on']
+# limit output to a reasonable number if there are lots
+output_limit = config['general']['output_limit']
+big_files = config['general']['big_files']
+
+
+# load big file names
+path_dict = {}
+if big_files:
+   file_spec = 'big_files'
+else:
+   file_spec = 'small_files'
+# load path_dict
+for file_name in config[file_spec]:
+   logging.warning("file_name is: "+file_name)
+   logging.warning("file_name value is: "+config[file_spec][file_name])
+   path_dict[file_name] = config[file_spec][file_name]
+
 
 # define the keys used to join parent table (movies) with children tables(keyword_keywords,credits_crew
 # credits_cast, movies_spoken_languages, movies_production_companies, movies_production_countries, movies_genres
-parent_key = 'id'
-child_key = 'movie_id'
+
+
+
+
+'''
+parent_key = config['general']['parent_key']
+child_key = config['general']'movie_id'
 parent_table = 'movies'
 default_rank = 'popularity'
 default_ranked_col = 'original_title'
@@ -44,13 +102,13 @@ debug_on = False
 # limit output to a reasonable number if there are lots
 output_limit = 10
 big_files = True
+'''
+
 avg_cols = ['rating']
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
 
 
-# switch to change the debug level - change to ERROR for faster runs
-logging.getLogger().setLevel(logging.WARNING)
-logging.warning("logging check")
+
 
 class Condition:
    def __init__(self,value_list,d_table):
@@ -70,7 +128,7 @@ def json_check(string, placeholder):
 
 # define paths for movie dataset files
 
-
+'''
 path_dict = {}
 if big_files:
    path_dict['links'] = 'C:\personal\chatbot_july_2019\datasets\links.csv'
@@ -85,6 +143,7 @@ else:
    path_dict['ratings'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/ratings_small.csv'
    path_dict['credits'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/credits_small.csv'
    path_dict['keywords'] = 'https://raw.githubusercontent.com/ryanmark1867/chatbot/master/datasets/keywords_small.csv'
+'''
 image_path = 'https://image.tmdb.org/t/p/w500'
 image_path_dict = {}
 image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92'
