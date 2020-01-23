@@ -14,6 +14,8 @@ intents:
 - condition_by_movie_ordered
 - condition_by_media
 - welcome_page
+- list_category
+- show_details
 
 entities:
 - file_name
@@ -34,6 +36,7 @@ entities:
 - Director
 - rank_axis
 - media
+- category
 slots:
   ascending_descending:
     type: categorical
@@ -49,6 +52,14 @@ slots:
     type: text
   condition_col:
     type: list
+  category:
+    type: text
+  detail_mode:
+    type: categorical
+    initial_value: text_list
+    values:
+    - text_list
+    - details
   condition_operator:
     type: categorical
     initial_value: equals
@@ -65,6 +76,10 @@ slots:
   Editor:
     type: text
   Costume_Design:
+    type: text
+  name:
+    type: text
+  surname:
     type: text
   file_name:
     type: text
@@ -164,4 +179,6 @@ actions:
 - action_condition_by_media
 - action_condition_by_movie_ordered
 - action_welcome_page
+- action_list_category
+- action_show_details
 
