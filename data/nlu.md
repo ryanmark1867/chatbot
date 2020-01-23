@@ -19,14 +19,17 @@
 - show [genres](category:genre)
 - list [languages](category:language)
 - show [languages](category:language)
+- show [Languages](category:language)
 - show [countries](category:country)
 - list [countries](category:country)
+- list [Countries](category:country)
 
 ## intent: show_details
 - show details for [Blade Runner](movie)
 - show details for [Heat](movie)
 - show details for [When Harry Met Sally](movie)
 - show details for [GoldenEye](movie)
+- show details for [Goldfinger](movie)
 - show details for [Roger Moore](cast_name)
 
 ## intent:condition_by_media
