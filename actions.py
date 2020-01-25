@@ -1185,7 +1185,7 @@ class action_show_details(Action):
                 }
             }
             dispatcher.utter_custom_json(gt)
-            dispatcher.utter_message("could not find media for show details - please try another query")
+            dispatcher.utter_message("COMMENT - past posting to FM")
       except:
          if debug_on:
             raise
