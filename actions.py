@@ -1185,7 +1185,7 @@ class action_show_details(Action):
                     }
                 }
             }
-            dispatcher.utter_custom_json(gt)
+            dispatcher.utter_custom_json(message1)
             dispatcher.utter_message("COMMENT - past posting to FM")
       except:
          if debug_on:
