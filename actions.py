@@ -1111,7 +1111,7 @@ class action_show_details(Action):
             logging.warning("poster_file is "+str(poster_file.iloc[0]))
             # TODO for test need URL of this form http://127.0.0.1:5000/rhIRbceoE9lR4veEXuwCC2wARtG.jpg
             # target_URL = wv_URL+str(poster_file.iloc[0])
-            target_URL = "http://52.168.9.70/"
+            target_URL = "http://52.168.9.70"
             logging.warning("target_URL is "+str(target_URL))
             message1 = {
                "attachment": {
@@ -1130,7 +1130,62 @@ class action_show_details(Action):
                   }
                }
             }
-            dispatcher.utter_custom_json(message1)
+            gt = {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": "Welcome! 1",
+                            "image_url": "https://picsum.photos/200",
+                            "subtitle": "We have the right hat for everyone.",
+                            "default_action": {
+                                "type": "web_url",
+                                "url": target_URL,
+                                "webview_height_ratio": "tall",
+                            },
+                            "buttons": [
+                                {
+                                    "type": "web_url",
+                                    "url": target_URL,
+                                    "title": "View Website"
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "Start Chatting",
+                                    "payload": "DEVELOPER_DEFINED_PAYLOAD"
+                                }
+                            ]
+                        },
+                        {
+                            "title": "Welcome! 2",
+                            "image_url": "https://picsum.photos/200",
+                            "subtitle": "We have the right hat for everyone.",
+                            "default_action": {
+                                "type": "web_url",
+                                "url": target_URL,
+                                "webview_height_ratio": "tall",
+                            },
+                            "buttons": [
+                                {
+                                    "type": "web_url",
+                                    "url": target_URL,
+                                    "title": "View Website"
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "Start Chatting",
+                                    "payload": "DEVELOPER_DEFINED_PAYLOAD"
+                                }
+                            ]
+                            }
+                        ]
+                    }
+                }
+            }
+            dispatcher.utter_custom_json(gt)
+            dispatcher.utter_message("could not find media for show details - please try another query")
       except:
          if debug_on:
             raise
