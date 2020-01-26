@@ -664,6 +664,7 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
 
 def output_result(dispatcher,result,row_range,tracker):
    ''' common output to bot interface and logger '''
+   global display_mode
    i = 0
    # if the range to print is None, use overall default. Otherwise use range
    logging.warning("display_mode 2 is: "+display_mode)
@@ -1214,6 +1215,7 @@ class action_list_category(Action):
       return "action_list_category"
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       logging.warning("IN ACTION LIST CATEGORY")
+      global display_mode
       category = tracker.get_slot('category')
       category_table = category_table_dict[category]
       logging.warning("category is "+str(category))
