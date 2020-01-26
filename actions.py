@@ -63,9 +63,6 @@ debug_on = config['general']['debug_on']
 # limit output to a reasonable number if there are lots
 output_limit = config['general']['output_limit']
 big_files = config['general']['big_files']
-# had been a slot but it should be controlled within Python instead because it doesn't get set by user interaction
-detail_mode = "text_list"
-# detail_mode = "details"
 
 
 # load big file names
@@ -690,14 +687,11 @@ def output_result(dispatcher,result,row_range,tracker):
             str_row_log = str_row_log+" "+str(row[col])+"\t"
          logging.warning(str_row_log)
          # check whether a simple output or details with linkable buttons
-         # if tracker.get_slot('detail_mode') == 'text_list':
-         if detail_mode == 'text_list':
+         if tracker.get_slot('detail_mode') == 'text_list':
             dispatcher.utter_message(str_row)
-        else:
+         else:
             # build query that the qr will trigger
             # TODO get better than this hacky way to get year included
-            # reset for next time
-            
             payload_text = "show details for "+str_raw
             logging.warning("payload_text is "+payload_text)
             t_year = df_dict['movies'][df_dict['movies']['original_title']==str_raw]
@@ -712,16 +706,14 @@ def output_result(dispatcher,result,row_range,tracker):
             if qr_count >= max_qr:
                break
       # if qrs being output, build remainder of json and send
-      # if tracker.get_slot('detail_mode') == 'details':
-        if detail_mode == 'details':
-            details_text = tracker.get_slot('genre_name')+", good choice!  Here are some highly rated movies."
-            details_message = {               
+      if tracker.get_slot('detail_mode') == 'details':
+         details_text = tracker.get_slot('genre_name')+", good choice!  Here are some highly rated movies."
+         details_message = {               
                       "text": details_text,
                       "quick_replies": qr_list
                       }
-            logging.warning("details_message is "+str(details_message))
-            dispatcher.utter_custom_json(details_message)
-            detail_mode = 'text_list'
+         logging.warning("details_message is "+str(details_message))
+         dispatcher.utter_custom_json(details_message)
    else:
       # need to print average of columns
       for col in avg_set:
@@ -1256,7 +1248,7 @@ class action_list_category(Action):
             qr_list = []
       '''
       logging.warning("list_category_message is "+str(list_category_message))
-      detail_mode = 'details'  
+        
       # set the display mode to detailed so that the results are clickable
       return[SlotSet('detail_mode','details'),SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
