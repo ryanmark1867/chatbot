@@ -70,6 +70,7 @@ big_files = config['general']['big_files']
 #    - text_list
 #    - details
 detail_mode = "text_list"
+logging.warning("detail_mode 1 is: "+detail_mode)
 
 
 # load big file names
@@ -665,6 +666,7 @@ def output_result(dispatcher,result,row_range,tracker):
    ''' common output to bot interface and logger '''
    i = 0
    # if the range to print is None, use overall default. Otherwise use range
+   logging.warning("detail_mode 2 is: "+detail_mode)
    # TODO symptom where if row_range in query matches value in training sample output format is strange. Workaround now in training.
    if row_range == None:
       print_limit = output_limit
@@ -1258,6 +1260,7 @@ class action_list_category(Action):
       logging.warning("list_category_message is "+str(list_category_message))
         
       # set the display mode to detailed so that the results are clickable
+      logging.warning("detail_mode 3 is: "+detail_mode)
       detail_mode = "details"
       return[SlotSet('detail_mode','details'),SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
