@@ -69,8 +69,8 @@ big_files = config['general']['big_files']
 #    values:
 #    - text_list
 #    - details
-detail_mode = "text_list"
-logging.warning("detail_mode 1 is: "+detail_mode)
+display_mode = "text_list"
+logging.warning("display_mode 1 is: "+display_mode)
 
 
 # load big file names
@@ -666,7 +666,7 @@ def output_result(dispatcher,result,row_range,tracker):
    ''' common output to bot interface and logger '''
    i = 0
    # if the range to print is None, use overall default. Otherwise use range
-   logging.warning("detail_mode 2 is: "+detail_mode)
+   logging.warning("display_mode 2 is: "+display_mode)
    # TODO symptom where if row_range in query matches value in training sample output format is strange. Workaround now in training.
    if row_range == None:
       print_limit = output_limit
@@ -696,7 +696,7 @@ def output_result(dispatcher,result,row_range,tracker):
             str_row_log = str_row_log+" "+str(row[col])+"\t"
          logging.warning(str_row_log)
          # check whether a simple output or details with linkable buttons
-         if detail_mode == 'text_list':
+         if display_mode == 'text_list':
             dispatcher.utter_message(str_row)
          else:
             # build query that the qr will trigger
@@ -715,7 +715,7 @@ def output_result(dispatcher,result,row_range,tracker):
             if qr_count >= max_qr:
                break
       # if qrs being output, build remainder of json and send
-      if detail_mode == 'details':
+      if display_mode == 'details':
          details_text = tracker.get_slot('genre_name')+", good choice!  Here are some highly rated movies."
          details_message = {               
                       "text": details_text,
@@ -723,7 +723,7 @@ def output_result(dispatcher,result,row_range,tracker):
                       }
          logging.warning("details_message is "+str(details_message))
          dispatcher.utter_custom_json(details_message)
-         detail_mode = "text_list"
+         display_mode = "text_list"
    else:
       # need to print average of columns
       for col in avg_set:
@@ -1260,8 +1260,8 @@ class action_list_category(Action):
       logging.warning("list_category_message is "+str(list_category_message))
         
       # set the display mode to detailed so that the results are clickable
-      logging.warning("detail_mode 3 is: "+detail_mode)
-      detail_mode = "details"
+      logging.warning("display_mode 3 is: "+display_mode)
+      display_mode = "details"
       return[SlotSet('detail_mode','details'),SlotSet('budget',None),SlotSet('cast_name',None),SlotSet('character',None),SlotSet('condition_col',None),SlotSet('condition_operator',None),SlotSet('condition_val',None),SlotSet('Costume_Design',None),SlotSet('Director',None),SlotSet('Editor',None),SlotSet('file_name',None),SlotSet('genre',None),SlotSet('keyword',None),SlotSet('language',None),SlotSet('media',None),SlotSet('movie',None),	SlotSet('original_language',None),SlotSet('plot',None),SlotSet('Producer',None),SlotSet('rank_axis',None),SlotSet('ranked_col',None),SlotSet('revenue',None),SlotSet('row_number',None),SlotSet('row_range',None),SlotSet('sort_col',None),SlotSet('top_bottom',None),SlotSet('year',None),SlotSet('ascending_descending',None)]
 
 
