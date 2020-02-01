@@ -26,6 +26,7 @@ import requests
 import os
 from collections import Counter
 import yaml
+from flask_test import test_call
 
 # switch to change the debug level - change to ERROR for faster runs
 logging.getLogger().setLevel(logging.WARNING)
@@ -72,6 +73,7 @@ big_files = config['general']['big_files']
 display_mode = "text_list"
 logging.warning("display_mode 1 is: "+display_mode)
 
+test_call("test to other file feb 1, 2020")
 
 # load big file names
 path_dict = {}
@@ -1123,7 +1125,8 @@ class action_show_details(Action):
             # TODO for test need URL of this form http://127.0.0.1:5000/rhIRbceoE9lR4veEXuwCC2wARtG.jpg
             # target_URL = wv_URL+str(poster_file.iloc[0])
             #target_URL = "http://52.168.9.70"
-            target_URL = "https://52.168.9.70:5000/"
+            target_URL = "https://webviewfm.ngrok.io/"
+            #target_URL = "https://cbc.ca"
             logging.warning("target_URL is "+str(target_URL))
             message1 = {
                "attachment": {
@@ -1136,7 +1139,7 @@ class action_show_details(Action):
                            "type":"web_url",
                            "url":target_URL,
                            "title":"URL Button",
-                           "webview_height_ratio": "full"
+                           "webview_height_ratio": "compact"
                         }
                      ]
                   }
@@ -1197,7 +1200,7 @@ class action_show_details(Action):
                 }
             }
             dispatcher.utter_custom_json(message1)
-            dispatcher.utter_message("COMMENT - past posting to FM")
+            dispatcher.utter_message("COMMENT - past posting to FM Jan 31")
       except:
          if debug_on:
             raise
