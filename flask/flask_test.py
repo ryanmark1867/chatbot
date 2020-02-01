@@ -2,6 +2,16 @@
 
 from flask import Flask, render_template
 from string import Template
+from OpenSSL import SSL
+# import ssl
+# context = SSL.Context(SSL.PROTOCOL_TLS)
+# client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+#
+#context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
+#context = SSL.Context(SSL.TLSv1_METHOD)
+# context = ssl.Context(ssl.PROTOCOL_TLS)
+#context.use_privatekey_file('C:\personal\chatbot_july_2019\ssl_experiment\server.key')
+#context.use_certificate_file('C:\personal\chatbot_july_2019\ssl_experiment\server.crt')
 
 # poster URLs copied from main file
 image_path = 'https://image.tmdb.org/t/p/w500'
@@ -39,7 +49,7 @@ HTML_TEMPLATE = Template("""
 
 @app.route('/')
 def homepage():
-    return """<h1>Test of dynamic poster display</h1>"""
+    return """<h1>Test of dynamic poster display here Feb 1</h1>"""
 
 @app.route('/<some_file>')
 def some_place_page(some_file):
@@ -54,3 +64,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
+    #app.run(host='127.0.0.1', debug=True, ssl_context=context)
+    # app.run(ssl_context='adhoc',debug=True, host='0.0.0.0')
+    #context = ('C:\personal\chatbot_july_2019\ssl_experiment\server.crt', 'C:\personal\chatbot_july_2019\ssl_experiment\server.key')
+    #app.run(ssl_context=context,debug=True, host='0.0.0.0')
