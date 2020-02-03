@@ -26,7 +26,12 @@ import requests
 import os
 from collections import Counter
 import yaml
-from flask_test import test_call
+import pickle
+#from flask_test import test_call
+#from flask_test import read_wv_payload
+# import classes for exchanging data with dynamic web serving code
+from webview_classes import movie_info
+from webview_classes import payload_item
 
 # switch to change the debug level - change to ERROR for faster runs
 logging.getLogger().setLevel(logging.WARNING)
@@ -72,8 +77,9 @@ big_files = config['general']['big_files']
 #    - details
 display_mode = "text_list"
 logging.warning("display_mode 1 is: "+display_mode)
+wv_payload = {}
 
-test_call("test to other file feb 1, 2020")
+#  test_call("test to other file feb 1, 2020")
 
 # load big file names
 path_dict = {}
@@ -116,6 +122,7 @@ big_files = True
 
 avg_cols = ['rating']
 child_tables = ['links','ratings','keywords','movies_genres','movies_production_companies','movies_production_countries','movies_spoken_languages','credits_cast','credits_crew','keywords_keywords']
+wv_payload_list = ['poster_url', 'original_title', 'year', 'rating','run_time','genre_list','director_list','actor_list','crew_dict','overview'] #list of all the elements in the webview outbound payload
 
 
 
@@ -1097,6 +1104,47 @@ class action_clear_slots(Action):
       ranked_table is ['movies']
       '''
       
+def get_wv_payload(key_slot, key_value):
+    ''' for the key_slot with key_value, assemble the payload to be displayed in webview. returns dictionary of payload_item objects'''
+    #wv_payload_list = ['poster_url', 'original_title', 'year', 'rating','run_time','genre_list','director_list','actor_list','crew_dict','overview'] #list of all the elements in the webview outbound payload
+    #wv_payload_dict = {} # dictionary of payload items sent to webview rendering
+    '''def __init__(display_content,display_type,return_type, return_payload):
+        self.display_content = display_content # what gets shown in webview
+        self.display_type = display_type # how it gets shown: text, link, image
+        self.return_type = return_type # where action occurs if this item is selected: fm (close wv and return payload back to Facebook Messenger), wv (stay in wv and take action there)
+        self.return_payload = return_payload # what gets sent back if this display item gets selected'''
+    # TODO post demo 1 get a more elegant way to get all the required keys
+    # base_df = base_df[(base_df[condition].apply(lambda x: prep_compare(x))).isin(map(lambda x:x.lower(),condition_dict[condition]))]
+    movie_id_list = df_dict['movies'][(df_dict['movies'][key_slot].apply(lambda x: prep_compare(x)))==key_value]['id'].tolist()
+    logging.warning("movie_id_list is"+str(movie_id_list))
+    movie_id_value = movie_id_list[0]
+    wv_payload_list = {}
+    poster_path_list = df_dict['movies'][df_dict['movies']['id']==movie_id_value]['poster_path'].tolist()
+    logging.warning("poster_path_list is"+str(poster_path_list))
+    wv_payload_list['poster_url'] = payload_item(image_path_dict['small']+"/"+poster_path_list[0],'image',None,None)
+    wv_payload_list['original_title']= payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['original_title'].tolist(),'text',None,None)
+    wv_payload_list['year']= payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['year'].tolist(),'text',None,None)
+    # TODO replace placeholder - need to find a way to extract rating more efficiently
+    wv_payload_list['rating']= payload_item('PLACEHOLDER','text',None,None)
+    wv_payload_list['run_time'] = payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['runtime'].tolist(),'text',None,None)
+    wv_payload_list['genre_list'] = payload_item(df_dict['movies_genres'][df_dict['movies_genres']['movie_id']==movie_id_value]['genre_name'].tolist(),'text',None,None)
+    # TODO need to define behaviour for click on director or actor links
+    dir_list = df_dict['credits_crew_Director'][df_dict['credits_crew_Director']['movie_id']==movie_id_value]['Director'].tolist()
+    wv_payload_list['director_list'] = payload_item(dir_list,'link','fm','show movies directed by ')
+    wv_payload_list['actor_list'] = payload_item(df_dict['credits_cast'][df_dict['credits_cast']['movie_id']==movie_id_value]['cast_name'].tolist(),'link','fm','show movies starring ')
+    wv_payload_list['overview'] = payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['overview'].tolist(),'text',None,None)
+    return(wv_payload_list)
+    
+def load_wv_payload(wv_payload):
+    ''' make payload available to flask - tactically via a pickle file'''
+    wv_payload_path = 'wv_payload.pkl'
+    with open(wv_payload_path, 'wb') as handle:
+        pickle.dump(wv_payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # trigger reading on the flask eng
+    # read_wv_payload(wv_payload_path)
+    return()
+    
+      
 class action_show_details(Action):
    """special demo action to show canned web page - TODO provide a less hacky way to do this"""
    def name(self) -> Text:
@@ -1104,6 +1152,7 @@ class action_show_details(Action):
    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
       #
       logging.warning("IN ACTION SHOW DETAILS")
+      global wv_payload
       raw_movie = tracker.get_slot('movie')
       logging.warning("raw_movie is "+str(raw_movie))
       slot_dict = {}
@@ -1128,6 +1177,17 @@ class action_show_details(Action):
             target_URL = "https://webviewfm.ngrok.io/"
             #target_URL = "https://cbc.ca"
             logging.warning("target_URL is "+str(target_URL))
+            # want to make call to build display object here
+            # TODO post demo 1, generalize this to be any key_slot rather than just original_title
+            wv_payload = get_wv_payload('original_title',raw_movie)
+            for wv_payload_index in wv_payload:
+                logging.warning("wv_payload index is "+str(wv_payload_index))
+                logging.warning("display content is "+str(wv_payload[wv_payload_index].display_content))
+                logging.warning("display type is "+str(wv_payload[wv_payload_index].display_type))
+                logging.warning("return type is "+str(wv_payload[wv_payload_index].return_type))
+                logging.warning("return payload is "+str(wv_payload[wv_payload_index].return_payload))
+            # pass wv_payload to flask
+            load_wv_payload(wv_payload)
             message1 = {
                "attachment": {
                     "type": "template",
