@@ -7,7 +7,28 @@
 <body>
 <div class="home">
 <h1> {{ title.titlename }} ({{year.yearname}})</h1>
+<p>run time is {{ run_time.run_timename }}</p>
+<p> Genres: 
+{% for genre in genre_list %}
+{{ genre.genre_listname }}, 
+{% endfor %}
+</p>
+<p> Directors: 
+{% for director in director_list %}
+{{ director.director_listname }}, 
+{% endfor %}
+</p>
+<p> Stars: 
+{% for actor in actor_list %}
+{{ actor.actor_listname }}, 
+{% endfor %}
+</p>
+<p></p>
+<p></p>
 <p>{{ plot.plotname }}</p>
 </div>
+{% for director in director_list %}
+<div><p>{{ director.director_listname }} </p></div>
+{% endfor %}
 </body>
 </html>
