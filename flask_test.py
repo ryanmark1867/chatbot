@@ -82,12 +82,13 @@ def homepage():
     year = {'yearname':str(wv_payload['year'].display_content[0])}
     plot = {'plotname':str(wv_payload['overview'].display_content[0])}
     run_time = {'run_timename':str(wv_payload['run_time'].display_content[0])}
+    rating = {'ratingname':str(wv_payload['rating'].display_content)}
     poster_url = {'poster_urlname':str(wv_payload['poster_url'].display_content)}
     genre_list = package_list('genre_listname',wv_payload['genre_list'].display_content)
     # genre_list = {'genre_listname':str(wv_payload['genre_list'].display_content)}
     actor_list = package_list('actor_listname',wv_payload['actor_list'].display_content)
     director_list = package_list('director_listname',wv_payload['director_list'].display_content)
-    return render_template('home.html',title=title,year = year,plot=plot,run_time=run_time,poster_url=poster_url,genre_list=genre_list,actor_list=actor_list, director_list=director_list)
+    return render_template('home.html',title=title,year = year,plot=plot,run_time=run_time,rating=rating,poster_url=poster_url,genre_list=genre_list,actor_list=actor_list, director_list=director_list)
     #return """<h1>Test of dynamic poster display here Feb 1 afternoon</h1>"""
     
 @app.route('/about/')

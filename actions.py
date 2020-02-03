@@ -69,6 +69,9 @@ debug_on = config['general']['debug_on']
 # limit output to a reasonable number if there are lots
 output_limit = config['general']['output_limit']
 big_files = config['general']['big_files']
+# URL for webview FM root
+wv_URL = config['general']['wv_url']
+image_path_index = config['general']['image_path_index']
 # detail_mode:
 #    type: categorical
 #    initial_value: text_list
@@ -163,10 +166,10 @@ else:
 '''
 image_path = 'https://image.tmdb.org/t/p/w500'
 image_path_dict = {}
-image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92'
-image_path_dict["medium"] = 'https://image.tmdb.org/t/p/w342'
-image_path_dict["big"] = 'https://image.tmdb.org/t/p/w500'
-wv_URL = 'http://127.0.0.1:5000'
+image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92' # 92x138
+image_path_dict["medium"] = 'https://image.tmdb.org/t/p/w342' # 342x513
+image_path_dict["big"] = 'https://image.tmdb.org/t/p/w500' # 500x750
+
 
 
 media_dict = {}
@@ -1121,7 +1124,7 @@ def get_wv_payload(key_slot, key_value):
     wv_payload_list = {}
     poster_path_list = df_dict['movies'][df_dict['movies']['id']==movie_id_value]['poster_path'].tolist()
     logging.warning("poster_path_list is"+str(poster_path_list))
-    wv_payload_list['poster_url'] = payload_item(image_path_dict['small']+"/"+poster_path_list[0],'image',None,None)
+    wv_payload_list['poster_url'] = payload_item(image_path_dict[image_path_index]+"/"+poster_path_list[0],'image',None,None)
     wv_payload_list['original_title']= payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['original_title'].tolist(),'text',None,None)
     wv_payload_list['year']= payload_item(df_dict['movies'][df_dict['movies']['id']==movie_id_value]['year'].tolist(),'text',None,None)
     # TODO replace placeholder - need to find a way to extract rating more efficiently
