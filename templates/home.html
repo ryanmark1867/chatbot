@@ -7,18 +7,19 @@
 <body>
 <div class="home">
 <h1> {{ title.titlename }} ({{year.yearname}})</h1>
-<p>run time is {{ run_time.run_timename }}</p>
-<p> Genres: 
+<p><b>Run Time:</b> {{ run_time.run_timename }}</p>
+<img src={{poster_url.poster_urlname}} alt={{title.titlename}} width="300" height="300" border="0">
+<p> <b>Genres:</b> 
 {% for genre in genre_list %}
 {{ genre.genre_listname }}, 
 {% endfor %}
 </p>
-<p> Directors: 
+<p> <b>Directors:</b> 
 {% for director in director_list %}
 {{ director.director_listname }}, 
 {% endfor %}
 </p>
-<p> Stars: 
+<p> <b>Stars:</b> 
 {% for actor in actor_list %}
 {{ actor.actor_listname }}, 
 {% endfor %}
@@ -27,8 +28,5 @@
 <p></p>
 <p>{{ plot.plotname }}</p>
 </div>
-{% for director in director_list %}
-<div><p>{{ director.director_listname }} </p></div>
-{% endfor %}
 </body>
 </html>
