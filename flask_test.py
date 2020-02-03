@@ -7,6 +7,7 @@ from OpenSSL import SSL
 from webview_classes import movie_info
 from webview_classes import payload_item
 import pickle
+#import string
 #from actions import wv_payload
 # import ssl
 # context = SSL.Context(SSL.PROTOCOL_TLS)
@@ -58,7 +59,8 @@ def package_list(key_name,list_in):
     i = 0
     list_out = []
     for element in list_in:
-        list_out.append({key_name:list_in[i]})
+        key_value = list_in[i].strip()
+        list_out.append({key_name:key_value})
         i = i+1
     return(list_out)
 

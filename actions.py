@@ -1175,9 +1175,8 @@ class action_show_details(Action):
                #poster_file = df_dict['movies'][df_dict['movies']['original_title'].str.lower()==slot_dict['movie'].lower()]['poster_path']
             logging.warning("poster_file is "+str(poster_file.iloc[0]))
             # TODO for test need URL of this form http://127.0.0.1:5000/rhIRbceoE9lR4veEXuwCC2wARtG.jpg
-            # target_URL = wv_URL+str(poster_file.iloc[0])
-            #target_URL = "http://52.168.9.70"
-            target_URL = "https://webviewfm.ngrok.io/"
+            #target_URL = "https://webviewfm.ngrok.io/"
+            target_URL = wv_URL
             #target_URL = "https://cbc.ca"
             logging.warning("target_URL is "+str(target_URL))
             # want to make call to build display object here
