@@ -7,31 +7,22 @@
 <body>
 <div class="home">
 <h1> {{ title.titlename }} ({{year.yearname}})</h1>
-<p><b>Run Time:</b> {{ run_time.run_timename }}</p>
+<p><b>Run Time: nn</b> {{ run_time.run_timename }}</p>
 <img src={{poster_url.poster_urlname}} alt={{title.titlename}} width="342" height="513" border="0">
 <p> <b>Rating:</b> 
 <p> <b>Genres:</b> 
 {% for genre in genre_list %}
-{{ genre.genre_listname }}
-{% if not loop.last %}
-    ,
-{% endif %}
+{{ genre.genre_listname}}{% if not loop.last %}, {% endif %}
 {% endfor %}
 </p>
 <p> <b>Directors:</b> 
 {% for director in director_list %}
-{{ director.director_listname }}
-{% if not loop.last %}
-    ,
-{% endif %} 
+{{ director.director_listname}}{% if not loop.last %}, {% endif %} 
 {% endfor %}
 </p>
 <p> <b>Stars:</b> 
 {% for actor in actor_list %}
-{{ actor.actor_listname }}
-{% if not loop.last %}
-    ,
-{% endif %}
+{{ actor.actor_listname}}{% if not loop.last %}, {% endif %}
 {% endfor %}
 </p>
 <p></p>
