@@ -1,6 +1,6 @@
 # tester app to exercised Flask
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from string import Template
 from OpenSSL import SSL
 # import classes for exchanging data with dynamic web serving code
@@ -64,7 +64,9 @@ def package_list(key_name,list_in):
         i = i+1
     return(list_out)
 
-@app.route('/')
+# @app.route('/animals', methods=['GET', 'POST'])
+# @app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def homepage():
     #global wv_payload
     # TODO REPLACE THIS HACKY WAY TO GET PAYLOAD
@@ -90,7 +92,11 @@ def homepage():
     # genre_list = {'genre_listname':str(wv_payload['genre_list'].display_content)}
     actor_list = package_list('actor_listname',wv_payload['actor_list'].display_content)
     director_list = package_list('director_listname',wv_payload['director_list'].display_content)
+    print("ABOUT TO DISPLAY PAGE ")
+    selected_item = request.args.get('type')
+    print("SELECTED ITEM "+str(selected_item))
     return render_template('home.html',title=title,year = year,plot=plot,run_time=run_time,rating=rating,poster_url=poster_url,genre_list=genre_list,actor_list=actor_list, director_list=director_list)
+    
     #return """<h1>Test of dynamic poster display here Feb 1 afternoon</h1>"""
     
 @app.route('/about/')
