@@ -7,43 +7,23 @@ from OpenSSL import SSL
 from webview_classes import movie_info
 from webview_classes import payload_item
 import pickle
+from rasa.nlu.model import Interpreter
+import requests
+import json
 #import string
 #from actions import wv_payload
 # import ssl
 # context = SSL.Context(SSL.PROTOCOL_TLS)
 # client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 #
-#context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
-#context = SSL.Context(SSL.TLSv1_METHOD)
-# context = ssl.Context(ssl.PROTOCOL_TLS)
-#context.use_privatekey_file('C:\personal\chatbot_july_2019\ssl_experiment\server.key')
-#context.use_certificate_file('C:\personal\chatbot_july_2019\ssl_experiment\server.crt')
-
-# poster URLs copied from main file
-image_path = 'https://image.tmdb.org/t/p/w500'
-image_path_dict = {}
-image_path_dict["small"] = 'https://image.tmdb.org/t/p/w92'
-image_path_dict["medium"] = 'https://image.tmdb.org/t/p/w342'
-image_path_dict["big"] = 'https://image.tmdb.org/t/p/w500'
 
 
-'''
-Toy Story
-Jumanji
-Grumpier Old Men
-Waiting to Exhale
-Father of the Bride Part II
-'''
 
 
-# poster filenames:
-poster_file = {}
-poster_file['toy_story'] = 'rhIRbceoE9lR4veEXuwCC2wARtG.jpg'
-poster_file['jumanji'] = 'vzmL6fP7aPKNKPRTFnZmiUfciyV.jpg'
-poster_file['grumpier_old_men'] ='6ksm1sjKMFLbO7UY2i6G1ju9SML.jpg'
-poster_file['waiting_to_exhale'] ='16XOMpEaLWkrcPqSQqhTmeJuqQl.jpg'
-poster_file['father_of_the_bride'] ='e64sOI48hQXyru7naBFyssKFxVd.jpg'
-# wv_payload = {}
+
+# API_ENDPOINT = "http://localhost:5005/webhooks/rest/webhook"
+API_ENDPOINT = "http://localhost:5005/webhooks/rest/webhook"
+
 
 
 app = Flask(__name__)
@@ -94,7 +74,16 @@ def homepage():
     director_list = package_list('director_listname',wv_payload['director_list'].display_content)
     print("ABOUT TO DISPLAY PAGE ")
     selected_item = request.args.get('type')
-    print("SELECTED ITEM "+str(selected_item))
+    selected_category = request.args.get('category')
+    print("SELECTED ITEM and CATEGORY"+str(selected_item)+", "+str(selected_category))
+    m_payload = 'list movies starring '+str(selected_item)
+    print("mpayload is "+m_payload)
+    messagePayloadPython = {"sender": "default","message": m_payload}
+    messagePayload = json.dumps(messagePayloadPython)
+
+
+    r = requests.post(url = API_ENDPOINT, data = messagePayload) 
+
     return render_template('home.html',title=title,year = year,plot=plot,run_time=run_time,rating=rating,poster_url=poster_url,genre_list=genre_list,actor_list=actor_list, director_list=director_list)
     
     #return """<h1>Test of dynamic poster display here Feb 1 afternoon</h1>"""
