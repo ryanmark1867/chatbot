@@ -1,2 +1,2 @@
-﻿cd C:\personal\chatbot_july_2019\filebot_6\flask
+﻿cd C:\personal\chatbot_july_2019\filebot_6\
 python flask_test.py
