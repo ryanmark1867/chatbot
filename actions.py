@@ -16,6 +16,7 @@ import pandas as pd
 import re
 import ast
 import json
+import copy
 import logging
 import itertools
 import numbers
@@ -81,6 +82,9 @@ image_path_index = config['general']['image_path_index']
 display_mode = "text_list"
 logging.warning("display_mode 1 is: "+display_mode)
 wv_payload = {}
+# define a persistent dispatcher to display in FM
+persistent_dispatcher_set = False
+persistent_dispatcher = CollectingDispatcher()
 
 #  test_call("test to other file feb 1, 2020")
 
@@ -677,6 +681,8 @@ def get_condition_columns_to_pull(child_key, ranked_table, condition_table):
 def output_result(dispatcher,result,row_range,tracker):
    ''' common output to bot interface and logger '''
    global display_mode
+   global persistent_dispatcher
+   global persistent_dispatcher_set
    i = 0
    # if the range to print is None, use overall default. Otherwise use range
    logging.warning("display_mode 2 is: "+display_mode)
@@ -691,6 +697,16 @@ def output_result(dispatcher,result,row_range,tracker):
    qr_count = 0
    qr_list = []
    col_list = []
+   # determine if dispatcher has been saved yet, and if not, save it. If it has been saved, use the saved one 
+   '''
+   if not(persistent_dispatcher_set):
+    logging.warning("EYECATCHER - SETTING PERSISTEN_DISPATCHER_SET")
+    persistent_dispatcher_set = True
+    persistent_dispatcher = copy.deepcopy(dispatcher)
+   else:
+    logging.warning("EYECATCHER - SETTING DISPATCHER TO PERSISTENT")
+    dispatcher = persistent_dispatcher 
+   '''
    if not avg_set:
       # no average columns to calculate
       for index, row in result.iterrows():
@@ -1201,7 +1217,8 @@ class action_show_details(Action):
                            "type":"web_url",
                            "url":target_URL,
                            "title":"URL Button",
-                           "webview_height_ratio": "compact"
+                           "messenger_extensions": "true",
+                           "webview_height_ratio": "tall"
                         }
                      ]
                   }

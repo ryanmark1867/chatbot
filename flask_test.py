@@ -54,12 +54,14 @@ def homepage():
     wv_payload_path = 'wv_payload.pkl'
     with open(wv_payload_path, 'rb') as handle:
         wv_payload = pickle.load(handle)
+    '''    
     for wv_payload_index in wv_payload:
         print("here is item "+str(wv_payload_index))
         print("display content is "+str(wv_payload[wv_payload_index].display_content))
         print("display type is "+str(wv_payload[wv_payload_index].display_type))
         print("return type is "+str(wv_payload[wv_payload_index].return_type))
         print("return payload is "+str(wv_payload[wv_payload_index].return_payload))
+    '''
     title_display = wv_payload['original_title'].display_content[0]
     print("title_display is "+str(title_display))
     title = {'titlename':str(title_display)}
@@ -76,16 +78,23 @@ def homepage():
     selected_item = request.args.get('type')
     selected_category = request.args.get('category')
     print("SELECTED ITEM and CATEGORY"+str(selected_item)+", "+str(selected_category))
-    m_payload = 'list movies starring '+str(selected_item)
+    # build query depending on what category was clicked
+    m_payload = "list movies starring Ryan Reynolds"
+    if selected_category == 'genre':
+        m_payload = 'top '+str(selected_item)+' movies'
+    if selected_category == 'director':
+        m_payload = 'list movies directed by '+str(selected_item)
+    if selected_category == 'actor':
+        m_payload = 'list movies starring '+str(selected_item)
     print("mpayload is "+m_payload)
     messagePayloadPython = {"sender": "default","message": m_payload}
     messagePayload = json.dumps(messagePayloadPython)
 
 
-    r = requests.post(url = API_ENDPOINT, data = messagePayload) 
+    
 
     return render_template('home.html',title=title,year = year,plot=plot,run_time=run_time,rating=rating,poster_url=poster_url,genre_list=genre_list,actor_list=actor_list, director_list=director_list)
-    
+    r = requests.post(url = API_ENDPOINT, data = messagePayload) 
     #return """<h1>Test of dynamic poster display here Feb 1 afternoon</h1>"""
     
 @app.route('/about/')
