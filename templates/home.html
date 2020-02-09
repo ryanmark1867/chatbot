@@ -6,6 +6,7 @@
   </head>
 <body>
 <script type="text/javascript">
+<!-- Include the Messenger Extensions JS SDK per https://developers.facebook.com/docs/messenger-platform/webview/extensions -->
 (function(d, s, id){
   var js, fjs = d.getElementsByTagName(s)[0];
   if (d.getElementById(id)) {return;}
@@ -14,8 +15,24 @@
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'Messenger'));
 </script>
+<!-- attempt to set up REST call to Rasa server directly from web page
 <script type="text/javascript">
-
+const userAction = async () => {
+  const response = await fetch(api_endpoint, {
+    method: 'POST',
+	// body: myBody,
+    body: 'list movies starring Stewart Granger', // string or object
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  const myJson = await response.json(); //extract JSON from the http response
+  // do something with myJson
+}
+</script>
+-->
+<!-- code to control closing the page on click per https://stackoverflow.com/questions/688196/how-to-use-a-link-to-call-javascript-->
+<script type="text/javascript">
         // Wait for the page to load first
         window.onload = function() {
 
@@ -54,17 +71,17 @@
             return false;
           }
         }
-    </script>
+</script>
 <div class="home">
 <h1> {{ title.titlename }} ({{year.yearname}})</h1>
 <p><b>Run Time:</b> {{ run_time.run_timename }}</p>
 <img style="padding: 0 15px; float: left;" src={{poster_url.poster_urlname}} alt={{title.titlename}} width="342" height="513" border="0">
 <p style="margin-top: 20px;"> </p>
 <p> <b>Rating:</b> 
-<!--<a id="mylink" href="http://www.google.com">linky</a>-->
 <p> <b>Genres:</b> 
 {% for genre in genre_list %}
 <!--<a href="javascript:closeWindow();">{{ genre.genre_listname}}</a>-->
+<!--<button type="submit" onclick="UserAction()">{{ genre.genre_listname}}</button>-->
 <a id="mylink" href="{{url_for('homepage', type=genre.genre_listname,category = 'genre')}}">{{ genre.genre_listname}}</a>{% if not loop.last %}, {% endif %}
 {% endfor %}
 </p>
